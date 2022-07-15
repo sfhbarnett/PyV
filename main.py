@@ -1,3 +1,5 @@
+import numpy
+
 from tiffstack import TiffStack
 import matplotlib.pyplot as plt
 import numpy as np
@@ -37,6 +39,17 @@ def weight(siz,dev):
     w2 = 1-np.power(np.cos(np.pi*np.array([x for x in range(siz)])/(siz-1)),dev)
     w = np.outer(w.T,w2)
     return(w)
+
+def localfilt(x,y,u,v,threshold):
+    m = 3
+    nu = np.empty(u.shape+2*np.floor(m/2))
+    nv = np.empty(v.shape+2*np.floor(m/2))
+    nu[:] = np.nan
+    nv[:] = np.nan
+    nu[np.floor(m/2)+1:-np.floor(m/2),np.floor(m/2)+1:-np.floor(m/2)] = u
+    nv[np.floor(m / 2) + 1:-np.floor(m / 2), np.floor(m / 2) + 1:-np.floor(m / 2)] = v
+    INx = np.zeros(nu.shape)
+
 
 
 
