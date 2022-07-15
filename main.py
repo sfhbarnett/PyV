@@ -44,7 +44,6 @@ dt = 1
 for jj in range(0, tf.width-windowsize+1, int((1-overlap)*windowsize)):
     for ii in range(0, tf.height-windowsize+1, int((1-overlap)*windowsize)):
         if IN[int(jj+windowsize/2),int(ii+windowsize/2)] != 1:
-            print(321341)
             crop1 = image1[jj:jj+windowsize-1,ii:ii+windowsize-1]
             crop2 = image2[jj:jj+windowsize-1,ii:ii+windowsize-1]
             stdcrop1 = np.std(crop1)
@@ -70,18 +69,15 @@ for jj in range(0, tf.width-windowsize+1, int((1-overlap)*windowsize)):
                 bt = np.fft.fft2(crop1,s=(mf,nf))
                 c = np.fft.ifft2(np.multiply(at,bt))
                 c = np.real(c)
-                output = c[ma+mb:mf,na+nb:nf]
+                output = c[:ma+mb,:na+nb]
                 output = output/(windowsize**2*stdcrop1*stdcrop2)
-                maxima = np.where(output == np.amax(output))
+                maxima = np.where(output == np.nanmax(output))
                 if len(maxima) > 1:
                     maxima = list(zip(maxima[0], maxima[1]))
                     maxima = maxima[0]
                 x1 = maxima[0]
                 y1 = maxima[1]
-                try:
-                    x0,y0 = intpeak(x1,y1,output[y1,x1],output[y1,x1-1],output[y1,x1+1],output[y1-1,x1],output[y1+1,x1],windowsize)
-                except IndexError as e:
-                    a = 1
+                x0,y0 = intpeak(x1,y1,output[y1,x1],output[y1,x1-1],output[y1,x1+1],output[y1-1,x1],output[y1+1,x1],windowsize)
                 # R2 = output
                 # R2[y1-3:y1+3,x1-3:x1+3] = np.nan
                 # p2_y2,p2_x2 = np.where(R2 == np.amax(R2))
@@ -91,5 +87,7 @@ for jj in range(0, tf.width-windowsize+1, int((1-overlap)*windowsize)):
                 v[cj1, ci1] = -y0/dt
         ci1 += 1
     cj1 += 1
+    ci1 = 0
 
-print(u)
+plt.quiver(x,y,u,v)
+plt.show()
