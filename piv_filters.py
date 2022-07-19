@@ -27,7 +27,7 @@ def localfilt(x, y, u, v, threshold):
                     tabs = np.abs(t)
                     if np.sum(notnans) % 2 == 1:
                         histo[jj, ii] = t[np.where(tabs == np.nanmedian(tabs))][0]
-                        histostd[jj, ii] = np.std(tmp[notnans])
+                        histostd[jj, ii] = np.std(np.real(tmp[notnans]))+np.std(np.imag(tmp[notnans]))*1j
                     else:
                         notnans = np.invert(np.isnan(t))
                         complex = t[notnans]
