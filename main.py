@@ -4,11 +4,13 @@ import matplotlib.pyplot as plt
 from piv_filters import localfilt
 from naninterp import naninterp
 from matplotlib.figure import Figure
+import matplotlib.cm as cm
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtGui import QFontDatabase, QAction, QIcon
 import sys
 from superqt import QLabeledRangeSlider
+import numpy as np
 
 class MplCanvas(FigureCanvasQTAgg):
 
@@ -28,10 +30,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.centralcanvas = QtWidgets.QVBoxLayout()
         self.rightcontrols = QtWidgets.QVBoxLayout()
 
+        self.mincontrast = 0
+        self.maxcontrast = 64000
+
         # Left controls =========================
 
-        self.toggleroi = QtWidgets.QPushButton('Roi OFF ')
-        #self.toggleroi.clicked.connect(self.toggleroimode)
+        self.toggleroi = QtWidgets.QPushButton('Run PIV analysis')
+        self.toggleroi.clicked.connect(self.runPIV)
         self.toggleroi.setToolTip('Toggle ROI mode on/off')
         self.roimode = 0
         self.driftcorbutton = QtWidgets.QPushButton('Drift')
@@ -77,6 +82,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.contrastslider.label_shift_x = 10
         self.contrastslider.setRange(0, 200)
         self.contrastslider.valueChanged.connect(self.update_contrast)
+        self.contrastslider.setMinimumWidth(100)
+        self.contrastslider.label_shift_x = 10
+        self.contrastslider.setEdgeLabelMode(self.contrastslider.EdgeLabelMode.NoLabel)
         self.imagecontrols = QtWidgets.QHBoxLayout()
         self.imagecontrols.addWidget(self.contrastslider)
         self.imagecontrols.addWidget(self.sc)
@@ -179,7 +187,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.maxcontrast = value[1]
         if self.plothandle:
             self.plothandle.set_clim(self.mincontrast, self.maxcontrast)
-            self.sc.fig.canvas.draw()
+            #self.sc.fig.canvas.draw()
+
+    def runPIV(self):
+        windowsize = 16
+        overlap = 0.5
+        x, y, u, v = PIV(tf.getimage(1), tf.getimage(1+1), windowsize, overlap)
+        u, v = localfilt(x, y, u, v, 2)
+        u = naninterp(u)
+        v = naninterp(v)
+        M = np.sqrt(u*u+v*v)
+        self.sc.axes.quiver(x,y,u,v,M,cmap=plt.cm.jet)
+
 
 
 
@@ -193,12 +212,8 @@ tf = tiffstack(path)
 overlap = 0.5
 windowsize = 32
 
-
-# x, y, u, v = PIV(tf.getimage(0), tf.getimage(1), windowsize, overlap)
 #
-# u, v = localfilt(x, y, u, v, 2)
-# u = naninterp(u)
-# v = naninterp(v)
+
 #
 # plt.cla()
 # plt.quiver(x, y, u, v, scale_units='dots', width=0.001, headlength=5, headwidth=3)
