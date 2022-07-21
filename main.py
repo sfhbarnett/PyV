@@ -113,11 +113,16 @@ class MainWindow(QtWidgets.QMainWindow):
         saveact = QAction(QIcon("PyV/icons/save.png"),"Save drift corrected data",self)
         saveact.triggered.connect(self.savedrift)
 
+        homeact = QAction(QIcon("PyV/icons/pan.png"),"Home",self)
+        homeact.setCheckable(False)
+        homeact.triggered.connect(self.mpl_toolbar.home)
+
         self.toolbar = self.addToolBar("zoom")
         self.toolbar.addAction(panact)
         self.toolbar.addAction(zoomact)
         self.toolbar.addAction(openact)
         self.toolbar.addAction(saveact)
+        self.toolbar.addAction(homeact)
 
         # Stack slider ================
 
@@ -187,7 +192,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.maxcontrast = value[1]
         if self.plothandle:
             self.plothandle.set_clim(self.mincontrast, self.maxcontrast)
-            #self.sc.fig.canvas.draw()
+            self.sc.fig.canvas.draw()
 
     def runPIV(self):
         windowsize = 16
