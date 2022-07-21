@@ -1,5 +1,5 @@
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 def localfilt(x, y, u, v, threshold):
     m = 3
@@ -15,8 +15,8 @@ def localfilt(x, y, u, v, threshold):
     histo = np.zeros(nu.shape, dtype='complex')
     ma, na = U2.shape
     INx = np.zeros(nu.shape)
-    for ii in range(m-2, na-m+1, 1):
-        for jj in range(m-2, ma-m+1, 1):
+    for ii in range(m-2, na-m+2, 1):
+        for jj in range(m-2, ma-m+2, 1):
             if INx[jj, ii] != 1:
                 tmp = U2[jj - int(np.floor(m / 2)):jj + int(np.floor(m / 2)) + 1,
                       ii - int(np.floor(m / 2)):ii + int(np.floor(m / 2)) + 1].copy()
