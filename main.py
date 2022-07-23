@@ -7,10 +7,11 @@ from matplotlib.figure import Figure
 import matplotlib.cm as cm
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from PyQt6 import QtCore, QtWidgets
-from PyQt6.QtGui import QFontDatabase, QAction, QIcon
+from PyQt6.QtGui import QAction, QIcon
 import sys
 from superqt import QLabeledRangeSlider
 import numpy as np
+
 
 class MplCanvas(FigureCanvasQTAgg):
 
@@ -34,32 +35,26 @@ class MainWindow(QtWidgets.QMainWindow):
         self.maxcontrast = 64000
 
         # Left controls =========================
-
-        self.toggleroi = QtWidgets.QPushButton('Run PIV analysis')
-        self.toggleroi.clicked.connect(self.runPIV)
-        self.toggleroi.setToolTip('Toggle ROI mode on/off')
-        self.roimode = 0
-        self.driftcorbutton = QtWidgets.QPushButton('Drift')
-        #self.driftcorbutton.clicked.connect(self.correctdrift)
-        self.driftcorbutton.setToolTip('Correct the drift based on manually introduced point ROIs throughout the stack')
-        self.PCCbutton = QtWidgets.QPushButton('PCC')
-        #self.PCCbutton.clicked.connect(self.pccbuttonfunction)
-        self.PCCbutton.setToolTip('Applies subpixel phase cross correlation to estimate drift')
-        self.driftcheckbox = QtWidgets.QCheckBox("Apply drift", self)
-        self.driftcheckbox.setToolTip("If a drift estimation has been made, this toggles the correction to the displayed"
-                                      " data")
-        self.driftcheckbox.setEnabled(False)
-        #self.driftcheckbox.clicked.connect(self.viewdrift)
+        self.flo = QtWidgets.QFormLayout()
+        self.pixelsizeinput = QtWidgets.QLineEdit()
+        self.pixelsizeinput.editingFinished.connect(self.setPixelSize)
+        self.pixelsize = 1
+        self.maxspeedinput = QtWidgets.QLineEdit()
+        self.maxspeedinput.editingFinished.connect(self.updatedisplayspeed)
+        self.maxdispspeed = 100
+        self.flo.addRow("Pixel Size", self.pixelsizeinput)
+        self.flo.addRow("Max Speed", self.maxspeedinput)
+        self.runPIVbutton = QtWidgets.QPushButton('Run. PIV analysis')
+        self.runPIVbutton.clicked.connect(self.runPIV)
+        self.runPIVbutton.setToolTip('Perform PIV analysis')
         self.autocontrast = QtWidgets.QCheckBox("AutoContrast", self)
         self.autocontrast.setToolTip("Toggle autocontrast on/off")
         self.autocontrast.setChecked(True)
 
         self.buttonbox = QtWidgets.QVBoxLayout()
         self.buttonbox.addStretch(1)
-        self.buttonbox.addWidget(self.toggleroi)
-        self.buttonbox.addWidget(self.driftcorbutton)
-        self.buttonbox.addWidget(self.PCCbutton)
-        self.buttonbox.addWidget(self.driftcheckbox)
+        self.buttonbox.addLayout(self.flo)
+        self.buttonbox.addWidget(self.runPIVbutton)
         self.buttonbox.addWidget(self.autocontrast)
         self.buttonbox.addStretch(1)
         self.leftcontrols.addLayout(self.buttonbox)
@@ -68,7 +63,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.sc = MplCanvas(self, width=7, height=8, dpi=100)
         self.filename = None
-        path = '/Users/sbarnett/Documents/PIVData/fatima/ForSam/monolayer2/C1-20210708_MCF10ARAB5A_H2BGFP_Monolayer_Doxy_withoutDoxy.czi - 20210708_MCF10ARAB5A_H2BGFP_Monolayer_Doxy_withoutDoxy.czi #21.tif'
+        path = '/Users/sbarnett/Documents/PIVData/fatima/ForSam/monolayer2/' \
+               'C1-20210708_MCF10ARAB5A_H2BGFP_Monolayer_Doxy_withoutDoxy.czi -' \
+               ' 20210708_MCF10ARAB5A_H2BGFP_Monolayer_Doxy_withoutDoxy.czi #21.tif'
         self.imstack = tiffstack(path)
         self.plothandle = None
         self.sc.axes.get_xaxis().set_visible(False)
@@ -76,6 +73,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sc.axes.set_aspect('auto')
         self.sc.fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
         self.s = self.sc.axes.scatter([], [], facecolors='none', edgecolors='w')
+        self.quiver = None
         self.mpl_toolbar = NavigationToolbar2QT(self.sc, None)
         self.contrastslider = QLabeledRangeSlider(QtCore.Qt.Vertical)
         self.contrastslider.setHandleLabelPosition(QLabeledRangeSlider.LabelPosition.LabelsBelow)
@@ -100,20 +98,20 @@ class MainWindow(QtWidgets.QMainWindow):
         zoomact.setShortcut("Ctrl+z")
         zoomact.triggered.connect(self.mpl_toolbar.zoom)
 
-        panact = QAction(QIcon("PyV/icons/pan.png"),"pan",self)
+        panact = QAction(QIcon("PyV/icons/pan.png"), "pan", self)
         panact.setCheckable(True)
         panact.setShortcut("Ctrl+p")
         panact.setChecked(False)
         panact.triggered.connect(self.mpl_toolbar.pan)
 
-        openact = QAction(QIcon("PyV/icons/open.png"),"open file",self)
+        openact = QAction(QIcon("PyV/icons/open.png"), "open file", self)
         openact.setCheckable(False)
         openact.triggered.connect(self.get_file)
 
-        saveact = QAction(QIcon("PyV/icons/save.png"),"Save drift corrected data",self)
+        saveact = QAction(QIcon("PyV/icons/save.png"), "Save drift corrected data", self)
         saveact.triggered.connect(self.savedrift)
 
-        homeact = QAction(QIcon("PyV/icons/pan.png"),"Home",self)
+        homeact = QAction(QIcon("PyV/icons/home.png"), "Reset axes to original view", self)
         homeact.setCheckable(False)
         homeact.triggered.connect(self.mpl_toolbar.home)
 
@@ -156,7 +154,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def get_file(self):
         self.sc.axes.cla()
         self.filename = None
-        self.filename = QtWidgets.QFileDialog.getOpenFileName(self, 'Open File',directory='~/Documents')
+        self.filename = QtWidgets.QFileDialog.getOpenFileName(self, 'Open File', directory='~/Documents')
         if self.filename[0] != "":
             self.filename = self.filename[0]
             self.imstack = tiffstack(self.filename)
@@ -173,6 +171,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def move_through_stack(self, value):
         """ Updates the current image in the viewport"""
+        self.currentimage = value
 
         self.plothandle.set_data(self.imstack.getimage(value))
 
@@ -182,10 +181,9 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.contrastslider.setRange(0, self.imstack.maximum*1.5)
             self.contrastslider.setValue((self.imstack.minimum, self.imstack.maximum))
-
-        self.sc.fig.canvas.draw()
+        if self.quiver is not None:
+            self.makeQuiver()
         self.label.setText(str(value))
-        self.currentimage = value
 
     def update_contrast(self, value):
         self.mincontrast = value[0]
@@ -195,36 +193,53 @@ class MainWindow(QtWidgets.QMainWindow):
             self.sc.fig.canvas.draw()
 
     def runPIV(self):
-        windowsize = 16
+        windowsize = 32
         overlap = 0.5
-        x, y, u, v = PIV(tf.getimage(1), tf.getimage(1+1), windowsize, overlap)
-        u, v = localfilt(x, y, u, v, 2)
-        u = naninterp(u)
-        v = naninterp(v)
-        M = np.sqrt(u*u+v*v)
-        self.sc.axes.quiver(x,y,u,v,M,cmap=plt.cm.jet)
+        self.x = np.zeros((int(self.imstack.width // (windowsize*overlap)-1), int(self.imstack.width // (windowsize*overlap)-1), self.imstack.nfiles-1))
+        self.y = np.zeros((int(self.imstack.width // (windowsize*overlap)-1), int(self.imstack.width // (windowsize*overlap)-1), self.imstack.nfiles-1))
+        self.u = np.zeros((int(self.imstack.width // (windowsize*overlap)-1), int(self.imstack.width // (windowsize*overlap)-1), self.imstack.nfiles-1))
+        self.v = np.zeros((int(self.imstack.width // (windowsize*overlap)-1), int(self.imstack.width // (windowsize*overlap)-1), self.imstack.nfiles-1))
+        for frame in range(self.imstack.nfiles-1):
+            x, y, u, v = PIV(self.imstack.getimage(frame), self.imstack.getimage(frame+1), windowsize, overlap)
+            u, v = localfilt(x, y, u, v, 2)
+            u = naninterp(u)
+            v = naninterp(v)
+            self.x[:, :, frame] = x
+            self.y[:, :, frame] = y
+            self.u[:, :, frame] = u
+            self.v[:, :, frame] = v
+        self.makeQuiver()
+
+    def makeQuiver(self):
+        if self.quiver is not None:
+            self.quiver.remove()
+        if self.currentimage != 0:
+            frame = self.currentimage-1
+            M = np.sqrt(self.u[:, :, frame]*self.u[:, :, frame]+self.u[:, :, frame]*self.v[:, :, frame])
+            clipM = np.clip(M, 0, self.maxdispspeed)
+            self.quiver = self.sc.axes.quiver(self.x[:, :, frame], self.y[:, :, frame],
+                                              self.u[:, :, frame], self.v[:, :, frame], clipM,scale_units='xy',scale=1, cmap=plt.cm.jet)
+        else:
+            self.quiver = self.sc.axes.quiver([], [], [], [])
+        self.sc.fig.canvas.draw()
+
+    def updatedisplayspeed(self):
+        value = float(self.maxspeedinput.text())
+        self.maxdispspeed = value
+        self.makeQuiver()
+
+    def setPixelSize(self):
+        value = float(self.pixelsizeinput.text())
+        self.u /= self.pixelsize
+        self.v /= self.pixelsize
+        self.pixelsize = value
+        self.u *= self.pixelsize
+        self.v *= self.pixelsize
+        self.makeQuiver()
 
 
 
 
-
-path = '/Users/sbarnett/Documents/PIVData/fatima/ForSam/monolayer2/C1-20210708_MCF10ARAB5A_H2BGFP_Monolayer_Doxy_withoutDoxy.czi - 20210708_MCF10ARAB5A_H2BGFP_Monolayer_Doxy_withoutDoxy.czi #21.tif'
-
-tf = tiffstack(path)
-
-# plt.imshow(tf.getimage(0))
-# plt.show()
-overlap = 0.5
-windowsize = 32
-
-#
-
-#
-# plt.cla()
-# plt.quiver(x, y, u, v, scale_units='dots', width=0.001, headlength=5, headwidth=3)
-# plt.pause(0.1)
-# plt.axis('equal')
-# plt.show()
 
 def main():
     #Initialise GUI
