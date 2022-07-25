@@ -20,6 +20,14 @@ class MplCanvas(FigureCanvasQTAgg):
         self.axes = self.fig.add_subplot(111)
         super(MplCanvas, self).__init__(self.fig)
 
+class MplWidget(QtWidgets.QWidget):
+    def __init__(self,parent=None):
+        QtWidgets.QWidget.__init__(self, parent)
+        self.canvas = MplCanvas()
+        self.vbl = QtWidgets.QVBoxLayout()
+        self.vbl.addWidget(self.canvas)
+        self.setLayout(self.vbl)
+
 
 class MainWindow(QtWidgets.QMainWindow):
 
@@ -36,15 +44,19 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Left controls =========================
         self.flo = QtWidgets.QFormLayout()
-        self.pixelsizeinput = QtWidgets.QLineEdit()
-        self.pixelsizeinput.editingFinished.connect(self.setPixelSize)
+        self.windowsize = 16
+        self.windowsizeinput = QtWidgets.QLineEdit(str(self.windowsize))
+        self.windowsizeinput.editingFinished.connect(self.setwindowsize)
         self.pixelsize = 1
-        self.maxspeedinput = QtWidgets.QLineEdit()
-        self.maxspeedinput.editingFinished.connect(self.updatedisplayspeed)
+        self.pixelsizeinput = QtWidgets.QLineEdit(str(self.pixelsize))
+        self.pixelsizeinput.editingFinished.connect(self.setPixelSize)
         self.maxdispspeed = 100
+        self.maxspeedinput = QtWidgets.QLineEdit(str(self.maxdispspeed))
+        self.maxspeedinput.editingFinished.connect(self.updatedisplayspeed)
+        self.flo.addRow("Window Size", self.windowsizeinput)
         self.flo.addRow("Pixel Size", self.pixelsizeinput)
         self.flo.addRow("Max Speed", self.maxspeedinput)
-        self.runPIVbutton = QtWidgets.QPushButton('Run. PIV analysis')
+        self.runPIVbutton = QtWidgets.QPushButton('Run PIV analysis')
         self.runPIVbutton.clicked.connect(self.runPIV)
         self.runPIVbutton.setToolTip('Perform PIV analysis')
         self.autocontrast = QtWidgets.QCheckBox("AutoContrast", self)
@@ -193,14 +205,13 @@ class MainWindow(QtWidgets.QMainWindow):
             self.sc.fig.canvas.draw()
 
     def runPIV(self):
-        windowsize = 32
         overlap = 0.5
-        self.x = np.zeros((int(self.imstack.width // (windowsize*overlap)-1), int(self.imstack.width // (windowsize*overlap)-1), self.imstack.nfiles-1))
-        self.y = np.zeros((int(self.imstack.width // (windowsize*overlap)-1), int(self.imstack.width // (windowsize*overlap)-1), self.imstack.nfiles-1))
-        self.u = np.zeros((int(self.imstack.width // (windowsize*overlap)-1), int(self.imstack.width // (windowsize*overlap)-1), self.imstack.nfiles-1))
-        self.v = np.zeros((int(self.imstack.width // (windowsize*overlap)-1), int(self.imstack.width // (windowsize*overlap)-1), self.imstack.nfiles-1))
+        self.x = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
+        self.y = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
+        self.u = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
+        self.v = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
         for frame in range(self.imstack.nfiles-1):
-            x, y, u, v = PIV(self.imstack.getimage(frame), self.imstack.getimage(frame+1), windowsize, overlap)
+            x, y, u, v = PIV(self.imstack.getimage(frame), self.imstack.getimage(frame+1), self.windowsize, overlap)
             u, v = localfilt(x, y, u, v, 2)
             u = naninterp(u)
             v = naninterp(v)
@@ -218,7 +229,8 @@ class MainWindow(QtWidgets.QMainWindow):
             M = np.sqrt(self.u[:, :, frame]*self.u[:, :, frame]+self.u[:, :, frame]*self.v[:, :, frame])
             clipM = np.clip(M, 0, self.maxdispspeed)
             self.quiver = self.sc.axes.quiver(self.x[:, :, frame], self.y[:, :, frame],
-                                              self.u[:, :, frame], self.v[:, :, frame], clipM,scale_units='xy',scale=1, cmap=plt.cm.jet)
+                                              self.u[:, :, frame], self.v[:, :, frame], clipM,
+                                              scale_units='xy',scale=1, cmap=plt.cm.jet)
         else:
             self.quiver = self.sc.axes.quiver([], [], [], [])
         self.sc.fig.canvas.draw()
@@ -230,12 +242,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def setPixelSize(self):
         value = float(self.pixelsizeinput.text())
-        self.u /= self.pixelsize
-        self.v /= self.pixelsize
+        self.u /= self.pixelsize*self.windowsize
+        self.v /= self.pixelsize*self.windowsize
         self.pixelsize = value
-        self.u *= self.pixelsize
-        self.v *= self.pixelsize
+        self.u *= self.pixelsize*self.windowsize
+        self.v *= self.pixelsize*self.windowsize
         self.makeQuiver()
+
+    def setwindowsize(self):
+        self.windowsize = int(self.windowsizeinput.text())
 
 
 

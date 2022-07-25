@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="pan">
+    <file>pan.png</file>
+  </qresource>
+</RCC>
