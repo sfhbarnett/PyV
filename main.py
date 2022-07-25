@@ -52,12 +52,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.actionSave.setIcon(icon)
         icon = QIcon("PyV/icons/zoom2.png")
         self.actionzoom.setIcon(icon)
+        icon = QIcon("PyV/icons/export.png")
+        self.actionexport.setIcon(icon)
 
     def connectsignalsslots(self):
         self.actionzoom.triggered.connect(self.mpl_toolbar.zoom)
         self.actionPan.triggered.connect(self.mpl_toolbar.pan)
         self.actionhome.triggered.connect(self.mpl_toolbar.home)
         self.actionopen.triggered.connect(self.get_file)
+        self.actionexport.triggered.connect(self.exportfields)
         self.runPIVbutton.clicked.connect(self.runPIV)
         self.windowsizeinput.editingFinished.connect(self.setwindowsize)
         self.pixelsizeinput.editingFinished.connect(self.setPixelSize)
@@ -158,15 +161,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.windowsize = int(self.windowsizeinput.text())
 
     def setarrowscale(self):
-        self.arrowscale = float(Qtself.arrowscaleinput.text())
+        self.arrowscale = float(self.arrowscaleinput.text())
         self.makeQuiver()
 
     def exportfields(self):
         path = '/Users/sbarnett/PycharmProjects/PyV/exportloc'
+        fmt = '%d', '%d', '%1.3f', '%1.3f'
         for frame in range(self.x.shape[2]):
-            array = np.hstack((self.x[:,:,frame].flatten(), self.y[:,:,frame].flatten(),self.u[:,:,frame].flatten(),
-                                  self.v[:,:,frame].flatten()))
-            np.savetxt(path+'/'+str(frame)+'.txt',array,delimiter=',')
+            array = np.vstack((self.x[:,:,frame].flatten(), self.y[:,:,frame].flatten(),self.u[:,:,frame].flatten(),
+                                  self.v[:,:,frame].flatten())).T
+            np.savetxt(path+'/'+str(frame)+'.txt',array,delimiter=',',fmt=fmt)
 
 
 
