@@ -6,12 +6,13 @@ from naninterp import naninterp
 import matplotlib.cm as cm
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
 from PyQt6 import QtCore, QtWidgets
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QIntValidator, QDoubleValidator
 import sys
 import numpy as np
 from main_gui import Ui_MainWindow
 from superqt import QLabeledRangeSlider
 
+# pyuic6 - o main_gui.py - x main_gui.ui
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
@@ -23,7 +24,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.maxcontrast = 64000
         self.quiver = None
         self.mpl_toolbar = NavigationToolbar2QT(self.mplwidget.canvas, None)
-        self.connectslots()
+        self.connectsignalsslots()
         self.stackslider.setRange(0, 10)
         self.currentimage = 0
         self.contrastslider.setRange(0, 200)
@@ -31,10 +32,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.contrastslider.setEdgeLabelMode(self.contrastslider.EdgeLabelMode.NoLabel)
         self.contrastslider.label_shift_x = 10
         self.maxdispspeed = int(self.maxspeedinput.text())
+        self.maxspeedinput.setValidator(QDoubleValidator())
         self.windowsize = int(self.windowsizeinput.text())
+        self.windowsizeinput.setValidator(QIntValidator())
         self.pixelsize = int(self.pixelsizeinput.text())
+        self.pixelsizeinput.setValidator(QDoubleValidator())
+        self.arrowscale = float(self.arrowscaleinput.text())
+        self.arrowscaleinput.setValidator(QDoubleValidator())
         self.plothandle = None
-
 
     def seticons(self):
         icon = QIcon("PyV/icons/pan.png")
@@ -48,7 +53,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         icon = QIcon("PyV/icons/zoom2.png")
         self.actionzoom.setIcon(icon)
 
-    def connectslots(self):
+    def connectsignalsslots(self):
         self.actionzoom.triggered.connect(self.mpl_toolbar.zoom)
         self.actionPan.triggered.connect(self.mpl_toolbar.pan)
         self.actionhome.triggered.connect(self.mpl_toolbar.home)
@@ -59,6 +64,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.maxspeedinput.editingFinished.connect(self.updatedisplayspeed)
         self.contrastslider.valueChanged.connect(self.update_contrast)
         self.stackslider.valueChanged.connect(self.move_through_stack)
+        self.arrowscaleinput.editingFinished.connect(self.setarrowscale)
 
     def get_file(self):
         self.mplwidget.canvas.axes.cla()
@@ -126,16 +132,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             frame = self.currentimage-1
             M = np.sqrt(self.u[:, :, frame]*self.u[:, :, frame]+self.u[:, :, frame]*self.v[:, :, frame])
             clipM = np.clip(M, 0, self.maxdispspeed)
-            self.quiver = self.mplwidget.canvas.axes.quiver(self.x[:, :, frame], self.y[:, :, frame],
-                                              self.u[:, :, frame], self.v[:, :, frame], clipM,
+            self.quiver = self.mplwidget.canvas.axes.quiver(self.x[:, :, frame],
+                                                            self.y[:, :, frame],
+                                                            self.u[:, :, frame]*self.arrowscale,
+                                                            self.v[:, :, frame]*self.arrowscale, clipM,
                                               scale_units='xy',scale=1, cmap=plt.cm.jet)
         else:
             self.quiver = self.mplwidget.canvas.axes.quiver([], [], [], [])
         self.mplwidget.canvas.fig.canvas.draw()
 
     def updatedisplayspeed(self):
-        value = float(self.maxspeedinput.text())
-        self.maxdispspeed = value
+        self.maxdispspeed = float(self.maxspeedinput.text())
         self.makeQuiver()
 
     def setPixelSize(self):
@@ -150,6 +157,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def setwindowsize(self):
         self.windowsize = int(self.windowsizeinput.text())
 
+    def setarrowscale(self):
+        self.arrowscale = float(Qtself.arrowscaleinput.text())
+        self.makeQuiver()
+
+    def exportfields(self):
+        path = '/Users/sbarnett/PycharmProjects/PyV/exportloc'
+        for frame in range(self.x.shape[2]):
+            array = np.hstack((self.x[:,:,frame].flatten(), self.y[:,:,frame].flatten(),self.u[:,:,frame].flatten(),
+                                  self.v[:,:,frame].flatten()))
+            np.savetxt(path+'/'+str(frame)+'.txt',array,delimiter=',')
 
 
 
