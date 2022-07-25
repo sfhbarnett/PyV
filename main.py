@@ -11,157 +11,28 @@ from PyQt6.QtGui import QAction, QIcon
 import sys
 from superqt import QLabeledRangeSlider
 import numpy as np
+from main_gui import Ui_MainWindow
 
 
-class MplCanvas(FigureCanvasQTAgg):
-
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        self.fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = self.fig.add_subplot(111)
-        super(MplCanvas, self).__init__(self.fig)
-
-class MplWidget(QtWidgets.QWidget):
-    def __init__(self,parent=None):
-        QtWidgets.QWidget.__init__(self, parent)
-        self.canvas = MplCanvas()
-        self.vbl = QtWidgets.QVBoxLayout()
-        self.vbl.addWidget(self.canvas)
-        self.setLayout(self.vbl)
-
-
-class MainWindow(QtWidgets.QMainWindow):
+class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
-        self.setWindowTitle("PyV")
+        self.setupUi(self)
+        self.seticons()
+        self.actionopen.triggered.connect(self.get_file)
 
-        self.leftcontrols = QtWidgets.QVBoxLayout()
-        self.centralcanvas = QtWidgets.QVBoxLayout()
-        self.rightcontrols = QtWidgets.QVBoxLayout()
-
-        self.mincontrast = 0
-        self.maxcontrast = 64000
-
-        # Left controls =========================
-        self.flo = QtWidgets.QFormLayout()
-        self.windowsize = 16
-        self.windowsizeinput = QtWidgets.QLineEdit(str(self.windowsize))
-        self.windowsizeinput.editingFinished.connect(self.setwindowsize)
-        self.pixelsize = 1
-        self.pixelsizeinput = QtWidgets.QLineEdit(str(self.pixelsize))
-        self.pixelsizeinput.editingFinished.connect(self.setPixelSize)
-        self.maxdispspeed = 100
-        self.maxspeedinput = QtWidgets.QLineEdit(str(self.maxdispspeed))
-        self.maxspeedinput.editingFinished.connect(self.updatedisplayspeed)
-        self.flo.addRow("Window Size", self.windowsizeinput)
-        self.flo.addRow("Pixel Size", self.pixelsizeinput)
-        self.flo.addRow("Max Speed", self.maxspeedinput)
-        self.runPIVbutton = QtWidgets.QPushButton('Run PIV analysis')
-        self.runPIVbutton.clicked.connect(self.runPIV)
-        self.runPIVbutton.setToolTip('Perform PIV analysis')
-        self.autocontrast = QtWidgets.QCheckBox("AutoContrast", self)
-        self.autocontrast.setToolTip("Toggle autocontrast on/off")
-        self.autocontrast.setChecked(True)
-
-        self.buttonbox = QtWidgets.QVBoxLayout()
-        self.buttonbox.addStretch(1)
-        self.buttonbox.addLayout(self.flo)
-        self.buttonbox.addWidget(self.runPIVbutton)
-        self.buttonbox.addWidget(self.autocontrast)
-        self.buttonbox.addStretch(1)
-        self.leftcontrols.addLayout(self.buttonbox)
-
-        # Central Image controls ==========================
-
-        self.sc = MplCanvas(self, width=7, height=8, dpi=100)
-        self.filename = None
-        path = '/Users/sbarnett/Documents/PIVData/fatima/ForSam/monolayer2/' \
-               'C1-20210708_MCF10ARAB5A_H2BGFP_Monolayer_Doxy_withoutDoxy.czi -' \
-               ' 20210708_MCF10ARAB5A_H2BGFP_Monolayer_Doxy_withoutDoxy.czi #21.tif'
-        self.imstack = tiffstack(path)
-        self.plothandle = None
-        self.sc.axes.get_xaxis().set_visible(False)
-        self.sc.axes.get_yaxis().set_visible(False)
-        self.sc.axes.set_aspect('auto')
-        self.sc.fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
-        self.s = self.sc.axes.scatter([], [], facecolors='none', edgecolors='w')
-        self.quiver = None
-        self.mpl_toolbar = NavigationToolbar2QT(self.sc, None)
-        self.contrastslider = QLabeledRangeSlider(QtCore.Qt.Vertical)
-        self.contrastslider.setHandleLabelPosition(QLabeledRangeSlider.LabelPosition.LabelsBelow)
-        self.contrastslider.label_shift_x = 10
-        self.contrastslider.setRange(0, 200)
-        self.contrastslider.valueChanged.connect(self.update_contrast)
-        self.contrastslider.setMinimumWidth(100)
-        self.contrastslider.label_shift_x = 10
-        self.contrastslider.setEdgeLabelMode(self.contrastslider.EdgeLabelMode.NoLabel)
-        self.imagecontrols = QtWidgets.QHBoxLayout()
-        self.imagecontrols.addWidget(self.contrastslider)
-        self.imagecontrols.addWidget(self.sc)
-
-        self.centralcanvas.addLayout(self.imagecontrols)
-
-        # Right controls ======================
-
-        # Toolbar===================
-        self.mpl_toolbar = NavigationToolbar2QT(self.sc, None)
-        zoomact = QAction(QIcon("PyV/icons/zoom2.png"), "zoom", self)
-        zoomact.setCheckable(True)
-        zoomact.setShortcut("Ctrl+z")
-        zoomact.triggered.connect(self.mpl_toolbar.zoom)
-
-        panact = QAction(QIcon("PyV/icons/pan.png"), "pan", self)
-        panact.setCheckable(True)
-        panact.setShortcut("Ctrl+p")
-        panact.setChecked(False)
-        panact.triggered.connect(self.mpl_toolbar.pan)
-
-        openact = QAction(QIcon("PyV/icons/open.png"), "open file", self)
-        openact.setCheckable(False)
-        openact.triggered.connect(self.get_file)
-
-        saveact = QAction(QIcon("PyV/icons/save.png"), "Save drift corrected data", self)
-        saveact.triggered.connect(self.savedrift)
-
-        homeact = QAction(QIcon("PyV/icons/home.png"), "Reset axes to original view", self)
-        homeact.setCheckable(False)
-        homeact.triggered.connect(self.mpl_toolbar.home)
-
-        self.toolbar = self.addToolBar("zoom")
-        self.toolbar.addAction(panact)
-        self.toolbar.addAction(zoomact)
-        self.toolbar.addAction(openact)
-        self.toolbar.addAction(saveact)
-        self.toolbar.addAction(homeact)
-
-        # Stack slider ================
-
-        sliderholder = QtWidgets.QHBoxLayout()
-        self.stackslider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        self.stackslider.setRange(0, self.imstack.nfiles - 1)
-        self.stackslider.valueChanged.connect(self.move_through_stack)
-        self.currentimage = 0
-        sliderholder.addWidget(self.stackslider)
-        self.label = QtWidgets.QLabel('0', self)
-        self.label.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
-        self.label.setMinimumWidth(40)
-
-        sliderholder.addWidget(self.label)
-
-        # Combine =====================
-
-        self.layout = QtWidgets.QVBoxLayout()
-        self.centrallayout = QtWidgets.QHBoxLayout()
-        self.centrallayout.addLayout(self.leftcontrols)
-        self.centrallayout.addLayout(self.centralcanvas)
-        self.centrallayout.addLayout(self.rightcontrols)
-        self.layout.addWidget(self.toolbar)
-        self.layout.addLayout(self.centrallayout)
-        self.layout.addLayout(sliderholder)
-        widget = QtWidgets.QWidget()
-        widget.setLayout(self.layout)
-        self.setCentralWidget(widget)
-        self.setGeometry(100, 100, 1200, 900)
+    def seticons(self):
+        icon = QIcon("PyV/icons/pan.png")
+        self.actionPan.setIcon(icon)
+        icon = QIcon("PyV/icons/home.png")
+        self.actionhome.setIcon(icon)
+        icon = QIcon("PyV/icons/open.png")
+        self.actionopen.setIcon(icon)
+        icon = QIcon("PyV/icons/save.png")
+        self.actionSave.setIcon(icon)
+        icon = QIcon("PyV/icons/zoom2.png")
+        self.actionzoom.setIcon(icon)
 
     def get_file(self):
         self.sc.axes.cla()

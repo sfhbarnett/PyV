@@ -1,5 +1,9 @@
 <RCC>
-  <qresource prefix="test">
+  <qresource prefix="icons">
+    <file>home.png</file>
     <file>zoom2.png</file>
+    <file>save.png</file>
+    <file>pan.png</file>
+    <file>open.png</file>
   </qresource>
 </RCC>
