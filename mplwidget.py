@@ -15,6 +15,8 @@ class MplWidget(QtWidgets.QWidget):
         self.canvas = MplCanvas()
         self.canvas.axes.get_xaxis().set_visible(False)
         self.canvas.axes.get_yaxis().set_visible(False)
+        self.canvas.axes.set_facecolor('#F0F0F0')
+        self.canvas.fig.patch.set_facecolor('#EFEFEF')
         self.canvas.fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
         self.canvas.axes.set_aspect('auto')
         self.vbl = QtWidgets.QVBoxLayout()
