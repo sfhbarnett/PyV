@@ -2,6 +2,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from PyQt6 import QtWidgets
 from matplotlib.figure import Figure
 
+
 class MplCanvas(FigureCanvasQTAgg):
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1096</width>
-    <height>930</height>
+    <height>847</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -62,7 +62,7 @@
                 <string>PIV window size (pixels)</string>
                </property>
                <property name="text">
-                <string>16</string>
+                <string>32</string>
                </property>
               </widget>
              </item>
@@ -168,8 +168,60 @@
           </widget>
           <widget class="QWidget" name="tab_2">
            <attribute name="title">
-            <string>Tab 2</string>
+            <string>Analysis</string>
            </attribute>
+           <widget class="QPushButton" name="alignmentbutton">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>10</y>
+              <width>113</width>
+              <height>32</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Alignment</string>
+            </property>
+           </widget>
+           <widget class="QPushButton" name="orientationbutton">
+            <property name="geometry">
+             <rect>
+              <x>120</x>
+              <y>10</y>
+              <width>113</width>
+              <height>32</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Orientation</string>
+            </property>
+           </widget>
+           <widget class="QPushButton" name="pushButton_3">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>40</y>
+              <width>113</width>
+              <height>32</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Alignment</string>
+            </property>
+           </widget>
+           <widget class="QPushButton" name="pushButton_4">
+            <property name="geometry">
+             <rect>
+              <x>120</x>
+              <y>40</y>
+              <width>113</width>
+              <height>32</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Orientation</string>
+            </property>
+           </widget>
           </widget>
          </widget>
         </item>
@@ -286,6 +338,7 @@
    <addaction name="actionopen"/>
    <addaction name="actionSave"/>
    <addaction name="actionexport"/>
+   <addaction name="actionimport"/>
    <addaction name="separator"/>
    <addaction name="actionzoom"/>
    <addaction name="actionPan"/>
@@ -355,6 +408,18 @@
    </property>
    <property name="toolTip">
     <string>export quiver fields</string>
+   </property>
+  </action>
+  <action name="actionimport">
+   <property name="icon">
+    <iconset resource="icons/zoom2.qrc">
+     <normaloff>:/icons/import.png</normaloff>:/icons/import.png</iconset>
+   </property>
+   <property name="text">
+    <string>import</string>
+   </property>
+   <property name="toolTip">
+    <string>Import fields</string>
    </property>
   </action>
  </widget>

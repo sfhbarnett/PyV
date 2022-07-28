@@ -1,6 +1,7 @@
 import numpy as np
+from numba import njit
 
-
+@njit(nopython=True)
 def intpeak(x1, y1, R, Rxm1, Rxp1, Rym1, Ryp1, N):
     M = N
     x01 = x1 + ((np.log(Rxm1) - np.log(Rxp1)) / ((2 * np.log(Rxm1)) - (4 * np.log(R)) + (2 * np.log(Rxp1))))
@@ -24,15 +25,13 @@ def weight(siz, dev):
     return w
 
 
-def xcorrf2(crop1, crop2):
+def xcorrf2(crop1, crop2, mf, nf):
     ma = crop1.shape[0]
     na = crop1.shape[1]
     mb = crop2.shape[0]
     nb = crop2.shape[1]
 
     b = np.conj(crop2[mb::-1, nb::-1])
-    mf = 2 ** nextpow2(ma + mb)
-    nf = 2 ** nextpow2(na + nb)
     at = np.fft.fft2(b, s=(mf, nf))
     bt = np.fft.fft2(crop1, s=(mf, nf))
     c = np.fft.ifft2(np.multiply(at, bt))

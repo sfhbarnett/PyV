@@ -1,12 +1,12 @@
 import numpy as np
-import matplotlib.pyplot as plt
+
 
 def localfilt(x, y, u, v, threshold):
     m = 3
     nu = np.empty((int(u.shape[0]+2*np.floor(m/2)), int(u.shape[1]+2*np.floor(m/2))))
     nv = np.empty((int(u.shape[0]+2*np.floor(m/2)), int(u.shape[1]+2*np.floor(m/2))))
-    nu[:] = np.nan
-    nv[:] = np.nan
+    nu.fill(np.nan)
+    nv.fill(np.nan)
     nu[int(np.floor(m/2)):-int(np.floor(m/2)), int(np.floor(m/2)):-int(np.floor(m/2))] = u
     nv[int(np.floor(m/2)):-int(np.floor(m/2)), int(np.floor(m/2)):-int(np.floor(m/2))] = v
 

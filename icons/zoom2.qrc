@@ -1,6 +1,7 @@
 <RCC>
   <qresource prefix="icons">
     <file>export.png</file>
+    <file>import.png</file>
     <file>home.png</file>
     <file>zoom2.png</file>
     <file>save.png</file>
