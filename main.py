@@ -5,7 +5,6 @@ from tiffstack import tiffstack
 import matplotlib.pyplot as plt
 from piv_filters import localfilt
 from naninterp import naninterp
-import matplotlib.cm as cm
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtGui import QIcon, QIntValidator, QDoubleValidator
@@ -70,9 +69,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.pixelsizeinput.setValidator(QDoubleValidator())
         self.arrowscale = float(self.arrowscaleinput.text())
         self.arrowscaleinput.setValidator(QDoubleValidator())
+        self.timeinterval = float(self.timeintervalinput.text())
+        self.timeintervalinput.setValidator(QDoubleValidator())
+        self.tableview = TableView(self.table)
         self.imagehandle = None
         self.progressbar = QtWidgets.QProgressBar()
         self.statusbar.addPermanentWidget(self.progressbar)
+        self.setFocus()
 
     def seticons(self):
         icon = QIcon("PyV/icons/pan.png")
@@ -107,6 +110,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.stackslider.valueChanged.connect(self.move_through_stack)
         self.arrowscaleinput.editingFinished.connect(self.setarrowscale)
         self.actionSave.triggered.connect(self.savequiver)
+        self.timeintervalinput.editingFinished.connect(self.settimeinterval)
+        self.vrmsbutton.clicked.connect(self.calculatevrms)
 
     def get_file(self):
         self.mplwidget.canvas.axes.cla()
@@ -126,7 +131,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def move_through_stack(self, value):
         """ Updates the current image in the viewport"""
-        print(value)
         self.currentimage = value
         if self.imagehandle is not None:
             self.imagehandle.set_cmap('gray')
@@ -167,8 +171,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             v = naninterp(v)
             self.x[:, :, frame] = x * self.pixelsize
             self.y[:, :, frame] = y * self.pixelsize
-            self.u[:, :, frame] = u * self.pixelsize
-            self.v[:, :, frame] = v * self.pixelsize
+            self.u[:, :, frame] = u * self.pixelsize / self.timeinterval
+            self.v[:, :, frame] = v * self.pixelsize / self.timeinterval
         print(time.time()-start)
         self.makeQuiver()
 
@@ -192,6 +196,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def updatedisplayspeed(self):
         self.maxdispspeed = float(self.maxspeedinput.text())
         self.makeQuiver()
+        self.setFocus()
 
     def setPixelSize(self):
         value = float(self.pixelsizeinput.text())
@@ -201,13 +206,26 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.u *= self.pixelsize*self.windowsize
         self.v *= self.pixelsize*self.windowsize
         self.makeQuiver()
+        self.setFocus()
 
     def setwindowsize(self):
         self.windowsize = int(self.windowsizeinput.text())
+        self.setFocus()
 
     def setarrowscale(self):
         self.arrowscale = float(self.arrowscaleinput.text())
         self.makeQuiver()
+        self.setFocus()
+
+    def settimeinterval(self):
+        value = float(self.timeintervalinput.text())
+        self.u *= self.timeinterval
+        self.v *= self.timeinterval
+        self.timeinterval = value
+        self.u /= self.timeinterval
+        self.v /= self.timeinterval
+        self.makeQuiver()
+        self.setFocus()
 
     def exportfields(self):
         path = '/Users/sbarnett/PycharmProjects/PyV/exportloc'
@@ -260,10 +278,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         files = os.listdir(path)
         files.remove('.DS_Store')
         counter = 0
-        self.x = np.zeros((63,63,9))
-        self.y = np.zeros((63,63,9))
-        self.u = np.zeros((63,63,9))
-        self.v = np.zeros((63,63,9))
+        self.x = np.zeros((63, 63, 9))
+        self.y = np.zeros((63, 63, 9))
+        self.u = np.zeros((63, 63, 9))
+        self.v = np.zeros((63, 63, 9))
         files = self.natsort(files)
         for file in files:
             if file[-4:] == '.txt':
@@ -275,11 +293,58 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 counter += 1
         self.makeQuiver()
 
+    def calculatevrms(self):
+        self.vrms = []
+        for frame in range(self.u.shape[2]):
+            velocities = np.sqrt(self.u[:, :, frame]**2+self.v[:, :, frame])
+            self.vrms.append(np.sqrt(np.nanmean(velocities**2)))
+        self.tableview.addData(self.vrms)
+
     def natsort(self,tosort):
         """Natural sort file strings"""
         convert = lambda text: int(text) if text.isdigit() else text.lower()
         alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
         return sorted(tosort, key=alphanum_key)
+
+    def keyPressEvent(self, event):
+        if self.imagehandle is not None and self.quiver is not None:
+            if event.key() == QtCore.Qt.Key_S:
+                if 0 <= self.stackslider.value() < self.imstack.nfiles-1:
+                    self.stackslider.setValue(self.stackslider.value()+1)
+            elif event.key() == QtCore.Qt.Key_A:
+                if 0 < self.stackslider.value() < self.imstack.nfiles:
+                    self.stackslider.setValue(self.stackslider.value()-1)
+        event.accept()
+
+class TableView(QtWidgets.QTableWidget):
+    def __init__(self, tablewidget, *args):
+        QtWidgets.QTableWidget.__init__(self, *args)
+        self.tablewidget = tablewidget
+        self.data = []
+        self.setData()
+        
+    def setData(self):
+        horHeaders = ['#', 'vrms']
+        self.tablewidget.setColumnCount(2)
+        self.tablewidget.setHorizontalHeaderLabels(horHeaders)
+        for m, item in enumerate(self.data):
+            row = self.tablewidget.rowCount()
+            self.tablewidget.setRowCount(row+1)
+            col = 0
+            for el in item:
+                cell = QtWidgets.QTableWidgetItem(str(el))
+                self.tablewidget.setItem(row, col, cell)
+                col += 1
+        self.tablewidget.show()
+        
+    def addData(self,data):
+        row = self.tablewidget.rowCount()
+        for el in data:
+            self.tablewidget.setRowCount(row + 1)
+            cell = QtWidgets.QTableWidgetItem(str(round(el,4)))
+            self.tablewidget.setItem(row, 0, cell)
+            row += 1
+
 
 
 
