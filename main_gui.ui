@@ -223,7 +223,7 @@
              <string>Vrms</string>
             </property>
            </widget>
-           <widget class="QPushButton" name="pushButton_4">
+           <widget class="QPushButton" name="linearorderbutton">
             <property name="geometry">
              <rect>
               <x>120</x>
@@ -233,7 +233,7 @@
              </rect>
             </property>
             <property name="text">
-             <string>Orientation</string>
+             <string>Linear Order</string>
             </property>
            </widget>
           </widget>

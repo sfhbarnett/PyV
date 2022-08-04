@@ -50,6 +50,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
         self.seticons()
+        self.piv = Pivdata()
         self.mincontrast = 0
         self.maxcontrast = 64000
         self.quiver = None
@@ -112,6 +113,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.actionSave.triggered.connect(self.savequiver)
         self.timeintervalinput.editingFinished.connect(self.settimeinterval)
         self.vrmsbutton.clicked.connect(self.calculatevrms)
+        self.linearorderbutton.clicked.connect(self.calculateLinearOrderParameter)
 
     def get_file(self):
         self.mplwidget.canvas.axes.cla()
@@ -247,19 +249,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                                               bbox_inches=extent)
 
     def alignment(self):
-        frame = self.currentimage
-        averageU = np.mean(self.u[:,:,frame])
-        averageV = np.mean(self.v[:,:,frame])
-        meanvector = np.array([averageU,averageV])
-        upper = np.vstack((self.u[:,:,frame].flatten('F'),self.v[:,:,frame].flatten('F'))).T@meanvector
-        lower = np.sqrt(self.u[:, :, frame].flatten('F')**2+self.v[:, :, frame].flatten('F')**2) * np.sqrt(meanvector[0]**2+meanvector[1]**2)
-        value = np.divide(upper,lower)
-        map = np.reshape(value,(63,63))
-        map = resize(map,(self.u.shape[0]*self.windowsize//2,self.u.shape[1]*self.windowsize//2),order=0,preserve_range=True)
-        self.imagehandle.set_data(map)
-        self.imagehandle.set_cmap('viridis')
-        self.imagehandle.set_clim(-1, 1)
-        self.mplwidget.canvas.fig.canvas.draw()
+        if self.currentimage != 0:
+            frame = self.currentimage-1
+            averageU = np.mean(self.u[:,:,frame])
+            averageV = np.mean(self.v[:,:,frame])
+            meanvector = np.array([averageU,averageV])
+            upper = np.vstack((self.u[:,:,frame].flatten('F'),self.v[:,:,frame].flatten('F'))).T@meanvector
+            lower = np.sqrt(self.u[:, :, frame].flatten('F')**2+self.v[:, :, frame].flatten('F')**2) * np.sqrt(meanvector[0]**2+meanvector[1]**2)
+            value = np.divide(upper,lower)
+            map = np.reshape(value,(63,63))
+            map = resize(map,(self.u.shape[0]*self.windowsize//2,self.u.shape[1]*self.windowsize//2),order=0,preserve_range=True)
+            self.imagehandle.set_data(map)
+            self.imagehandle.set_extent([self.windowsize/4, self.imstack.width-self.windowsize/4, self.windowsize/4, self.imstack.width-self.windowsize/4])
+            self.imagehandle.set_cmap('viridis')
+            self.imagehandle.set_clim(-1, 1)
+            self.mplwidget.canvas.fig.canvas.draw()
 
 
     def orientation(self):
@@ -294,11 +298,26 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.makeQuiver()
 
     def calculatevrms(self):
+        """Calculate root mean square velocity of the vectorfield"""
         self.vrms = []
         for frame in range(self.u.shape[2]):
-            velocities = np.sqrt(self.u[:, :, frame]**2+self.v[:, :, frame])
+            velocities = np.sqrt(self.u[:, :, frame]**2+self.v[:, :, frame]**2)
             self.vrms.append(np.sqrt(np.nanmean(velocities**2)))
-        self.tableview.addData(self.vrms)
+        self.tableview.addData(self.vrms,'Vrms')
+
+    def rotacity(self):
+        pass
+
+    def calculateLinearOrderParameter(self):
+        self.LOP = []
+        for frame in range(self.u.shape[2]):
+            mean_u = np.nanmean(self.u[:,:,frame])
+            mean_v = np.nanmean(self.v[:,:,frame])
+            mean_uv2 = np.nanmean(self.u[:,:,frame]**2 + self.v[:,:,frame]**2)
+            self.LOP.append((mean_u**2+mean_v**2)/mean_uv2)
+        self.tableview.addData(self.LOP,'LinearOrder')
+
+
 
     def natsort(self,tosort):
         """Natural sort file strings"""
@@ -307,26 +326,29 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         return sorted(tosort, key=alphanum_key)
 
     def keyPressEvent(self, event):
-        if self.imagehandle is not None and self.quiver is not None:
-            if event.key() == QtCore.Qt.Key_S:
+        # Left and right for moving through stack
+        if self.imagehandle is not None or self.quiver is not None:
+            if event.key() == QtCore.Qt.Key_S or event.key() == QtCore.Qt.Key_Right:
                 if 0 <= self.stackslider.value() < self.imstack.nfiles-1:
                     self.stackslider.setValue(self.stackslider.value()+1)
-            elif event.key() == QtCore.Qt.Key_A:
+            elif event.key() == QtCore.Qt.Key_A or event.key() == QtCore.Qt.Key_Left:
                 if 0 < self.stackslider.value() < self.imstack.nfiles:
                     self.stackslider.setValue(self.stackslider.value()-1)
         event.accept()
+
 
 class TableView(QtWidgets.QTableWidget):
     def __init__(self, tablewidget, *args):
         QtWidgets.QTableWidget.__init__(self, *args)
         self.tablewidget = tablewidget
         self.data = []
+        self.headerlabels = []
         self.setData()
         
     def setData(self):
-        horHeaders = ['#', 'vrms']
-        self.tablewidget.setColumnCount(2)
-        self.tablewidget.setHorizontalHeaderLabels(horHeaders)
+        self.headerlabels = ['#']
+        self.tablewidget.setColumnCount(1)
+        self.tablewidget.setHorizontalHeaderLabels(self.headerlabels)
         for m, item in enumerate(self.data):
             row = self.tablewidget.rowCount()
             self.tablewidget.setRowCount(row+1)
@@ -337,14 +359,28 @@ class TableView(QtWidgets.QTableWidget):
                 col += 1
         self.tablewidget.show()
         
-    def addData(self,data):
-        row = self.tablewidget.rowCount()
+    def addData(self,data,headerlabel):
+        self.headerlabels.append(headerlabel)
+        col = self.tablewidget.columnCount()
+        self.tablewidget.setColumnCount(col+1)
+        self.tablewidget.setHorizontalHeaderLabels(self.headerlabels)
+        if len(data) > self.tablewidget.rowCount():
+            self.tablewidget.setRowCount(len(data))
+        row = 0
         for el in data:
-            self.tablewidget.setRowCount(row + 1)
             cell = QtWidgets.QTableWidgetItem(str(round(el,4)))
-            self.tablewidget.setItem(row, 0, cell)
+            self.tablewidget.setItem(row, col, cell)
             row += 1
 
+
+class Pivdata():
+    def __init__(self):
+        self.x = []
+        self.y = []
+        self.u = []
+        self.v = []
+        self.pixelsize = 1
+        self.timeinterval = 1
 
 
 
