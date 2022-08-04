@@ -11,7 +11,7 @@ from PyQt6.QtGui import QIcon, QIntValidator, QDoubleValidator
 import sys
 import numpy as np
 from main_gui import Ui_MainWindow
-from superqt import QLabeledRangeSlider
+from superqt import QLabeledDoubleRangeSlider
 import time
 from skimage.transform import resize
 import re
@@ -61,9 +61,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.stackslider.setRange(0, 10)
         self.currentimage = 0
         self.contrastslider.setRange(0, 200)
-        self.contrastslider.setHandleLabelPosition(QLabeledRangeSlider.LabelPosition.LabelsBelow)
+        self.contrastslider.setHandleLabelPosition(QLabeledDoubleRangeSlider.LabelPosition.LabelsBelow)
         self.contrastslider.setEdgeLabelMode(self.contrastslider.EdgeLabelMode.NoLabel)
         self.contrastslider.label_shift_x = 10
+        self.contrastslider.setSingleStep(1)
+        self.contrastslider.setDecimals(0)
         self.maxdispspeed = int(self.maxspeedinput.text())
         self.maxspeedinput.setValidator(QDoubleValidator())
         self.windowsize = int(self.windowsizeinput.text())
@@ -291,6 +293,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             map = np.reshape(value,(63,63))
             map = resize(map,(self.piv.u.shape[0]*self.windowsize//2,self.piv.u.shape[1]*self.windowsize//2),order=0,preserve_range=True)
             self.imagehandle.set_data(map)
+            self.contrastslider.setRange(-1, 1)
+            self.contrastslider.setValue((-1,1))
+            self.contrastslider.setSingleStep(0.01)
+            self.contrastslider.setDecimals(2)
             self.extent = [self.windowsize/4, self.imstack.width-self.windowsize/4, self.windowsize/4, self.imstack.width-self.windowsize/4]
             self.imagehandle.set_extent(self.extent)
             self.imagehandle.set_cmap('viridis')

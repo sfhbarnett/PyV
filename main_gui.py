@@ -122,9 +122,10 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.addWidget(self.tabs)
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
-        spacerItem = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Minimum)
+        spacerItem = QtWidgets.QSpacerItem(10, 20, QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Minimum)
         self.horizontalLayout.addItem(spacerItem)
-        self.contrastslider = QLabeledRangeSlider(self.centralwidget)
+        self.contrastslider = QLabeledDoubleRangeSlider(self.centralwidget)
+        self.contrastslider.setMinimumSize(QtCore.QSize(80, 0))
         self.contrastslider.setOrientation(QtCore.Qt.Orientation.Vertical)
         self.contrastslider.setObjectName("contrastslider")
         self.horizontalLayout.addWidget(self.contrastslider)
@@ -244,7 +245,7 @@ class Ui_MainWindow(object):
         self.pixelsizeinput.setToolTip(_translate("MainWindow", "Pixel size of the data, PIV results will use this as the scale"))
         self.pixelsizeinput.setText(_translate("MainWindow", "1"))
         self.label.setText(_translate("MainWindow", "Window Size"))
-        self.label_4.setText(_translate("MainWindow", "autocontrast"))
+        self.label_4.setText(_translate("MainWindow", "Autocontrast"))
         self.arrowscaleinput.setToolTip(_translate("MainWindow", "Set arrow scaling for visualisation"))
         self.arrowscaleinput.setText(_translate("MainWindow", "1"))
         self.label_5.setText(_translate("MainWindow", "Arrow Scale"))
@@ -273,7 +274,7 @@ class Ui_MainWindow(object):
         self.actionimport.setText(_translate("MainWindow", "import"))
         self.actionimport.setToolTip(_translate("MainWindow", "Import fields"))
 from mplwidget import MplWidget
-from superqt import QLabeledRangeSlider
+from superqt import QLabeledDoubleRangeSlider
 
 
 if __name__ == "__main__":

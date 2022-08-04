@@ -40,7 +40,7 @@
            </size>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tab">
            <attribute name="title">
@@ -304,14 +304,20 @@
             </property>
             <property name="sizeHint" stdset="0">
              <size>
-              <width>20</width>
+              <width>10</width>
               <height>20</height>
              </size>
             </property>
            </spacer>
           </item>
           <item>
-           <widget class="QLabeledRangeSlider" name="contrastslider">
+           <widget class="QLabeledDoubleRangeSlider" name="contrastslider">
+            <property name="minimumSize">
+             <size>
+              <width>80</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="orientation">
              <enum>Qt::Vertical</enum>
             </property>
@@ -514,7 +520,7 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QLabeledRangeSlider</class>
+   <class>QLabeledDoubleRangeSlider</class>
    <extends>QSlider</extends>
    <header>superqt.h</header>
   </customwidget>
