@@ -54,6 +54,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.mincontrast = 0
         self.maxcontrast = 64000
         self.quiver = None
+        self.imagehandle = plt.imshow(np.array([[]]))
+        self.extent = [0, 1000, 0, 1000]
         self.mpl_toolbar = NavigationToolbar2QT(self.mplwidget.canvas, None)
         self.connectsignalsslots()
         self.stackslider.setRange(0, 10)
@@ -73,9 +75,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.timeinterval = float(self.timeintervalinput.text())
         self.timeintervalinput.setValidator(QDoubleValidator())
         self.tableview = TableView(self.table)
-        self.imagehandle = None
+        self.colormaps = ['jet','viridis','plasma','inferno']
+        self.solids = ['black','green','red','cyan','magenta','yellow']
+        self.solidcode = {'black':'k','green':'g','red':'r','cyan':'c','magenta':'m','yellow':'y'}
+        self.fieldcolormapinput.addItems(self.colormaps+self.solids)
+        self.quivercmap = 'jet'
+        self.quivercolor =None
         self.progressbar = QtWidgets.QProgressBar()
         self.statusbar.addPermanentWidget(self.progressbar)
+        self.alignmentbutton.setStyleSheet("")
         self.setFocus()
 
     def seticons(self):
@@ -114,6 +122,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.timeintervalinput.editingFinished.connect(self.settimeinterval)
         self.vrmsbutton.clicked.connect(self.calculatevrms)
         self.linearorderbutton.clicked.connect(self.calculateLinearOrderParameter)
+        self.fieldcolormapinput.currentIndexChanged.connect(self.changecmap)
 
     def get_file(self):
         self.mplwidget.canvas.axes.cla()
@@ -122,7 +131,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if self.filename[0] != "":
             self.filename = self.filename[0]
             self.imstack = tiffstack(self.filename)
-            self.imagehandle = self.mplwidget.canvas.axes.imshow(self.imstack.getimage(0))
+            self.extent = [0, self.imstack.width,0,self.imstack.height]
+            self.imagehandle = self.mplwidget.canvas.axes.imshow(self.imstack.getimage(0),extent=self.extent)
             self.stackslider.setRange(0, self.imstack.nfiles - 1)
             self.stackslider.setValue(0)
             self.imagehandle.set_cmap('gray')
@@ -138,6 +148,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.imagehandle.set_cmap('gray')
             self.stackpos.setText(str(self.currentimage+1))
             self.imagehandle.set_data(self.imstack.getimage(value))
+            self.imagehandle.set_extent(self.extent)
             self.mplwidget.canvas.figure.canvas.draw_idle()
             # Check and update contrast
             if not self.autocontrast.isChecked():
@@ -158,10 +169,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def runPIV(self):
         overlap = 0.5
-        self.x = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
-        self.y = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
-        self.u = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
-        self.v = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
+        self.piv.x = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
+        self.piv.y = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
+        self.piv.u = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
+        self.piv.v = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
         # self.piv = externalPIV(self.x, self.y, self.u, self.v, self.windowsize, overlap, self.imstack)
         # self.piv.progressstatus.connect(self.updateprogress)
         # self.piv.start()
@@ -171,10 +182,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             u, v = localfilt(x, y, u, v, 2)
             u = naninterp(u)
             v = naninterp(v)
-            self.x[:, :, frame] = x * self.pixelsize
-            self.y[:, :, frame] = y * self.pixelsize
-            self.u[:, :, frame] = u * self.pixelsize / self.timeinterval
-            self.v[:, :, frame] = v * self.pixelsize / self.timeinterval
+            self.piv.x[:, :, frame] = x * self.pixelsize
+            self.piv.y[:, :, frame] = y * self.pixelsize
+            self.piv.u[:, :, frame] = u * self.pixelsize / self.timeinterval
+            self.piv.v[:, :, frame] = v * self.pixelsize / self.timeinterval
         print(time.time()-start)
         self.makeQuiver()
 
@@ -184,15 +195,25 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.quiver.remove()
         if self.currentimage != 0:
             frame = self.currentimage-1
-            M = np.sqrt(self.u[:, :, frame]*self.u[:, :, frame]+self.v[:, :, frame]*self.v[:, :, frame])
+            M = np.sqrt(self.piv.u[:, :, frame]*self.piv.u[:, :, frame]+self.piv.v[:, :, frame]*self.piv.v[:, :, frame])
             clipM = np.clip(M, 0, self.maxdispspeed)
-            self.quiver = self.mplwidget.canvas.axes.quiver(self.x[:, :, frame]+1,
-                                                            self.y[:, :, frame]+1,
-                                                            self.u[:, :, frame]*self.arrowscale,
-                                                            self.v[:, :, frame]*self.arrowscale, clipM,
-                                                            scale_units='xy',scale=1, cmap=plt.cm.jet)
+            if self.quivercmap is not None:
+                self.quiver = self.mplwidget.canvas.axes.quiver(self.piv.x[:, :, frame]+1,
+                                                                self.piv.y[:, :, frame]+1,
+                                                                self.piv.u[:, :, frame]*self.arrowscale,
+                                                                self.piv.v[:, :, frame]*self.arrowscale, clipM,
+                                                                scale_units='xy',scale=1,
+                                                                cmap=self.quivercmap)
+            else:
+                self.quiver = self.mplwidget.canvas.axes.quiver(self.piv.x[:, :, frame]+1,
+                                                                self.piv.y[:, :, frame]+1,
+                                                                self.piv.u[:, :, frame]*self.arrowscale,
+                                                                self.piv.v[:, :, frame]*self.arrowscale,
+                                                                color=self.quivercolor,
+                                                                scale_units='xy',scale=1)
         else:
             self.quiver = self.mplwidget.canvas.axes.quiver([], [], [], [])
+        self.imagehandle.set_extent(self.extent)
         self.mplwidget.canvas.fig.canvas.draw()
 
     def updatedisplayspeed(self):
@@ -202,11 +223,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def setPixelSize(self):
         value = float(self.pixelsizeinput.text())
-        self.u /= self.pixelsize*self.windowsize
-        self.v /= self.pixelsize*self.windowsize
+        self.piv.u /= self.pixelsize*self.windowsize
+        self.piv.v /= self.pixelsize*self.windowsize
         self.pixelsize = value
-        self.u *= self.pixelsize*self.windowsize
-        self.v *= self.pixelsize*self.windowsize
+        self.piv.u *= self.pixelsize*self.windowsize
+        self.piv.v *= self.pixelsize*self.windowsize
         self.makeQuiver()
         self.setFocus()
 
@@ -221,20 +242,30 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def settimeinterval(self):
         value = float(self.timeintervalinput.text())
-        self.u *= self.timeinterval
-        self.v *= self.timeinterval
+        self.piv.u *= self.timeinterval
+        self.piv.v *= self.timeinterval
         self.timeinterval = value
-        self.u /= self.timeinterval
-        self.v /= self.timeinterval
+        self.piv.u /= self.timeinterval
+        self.piv.v /= self.timeinterval
         self.makeQuiver()
         self.setFocus()
+
+    def changecmap(self,index):
+        cmap = self.fieldcolormapinput.currentText()
+        if cmap in self.colormaps:
+            self.quivercmap = cmap
+            self.quivercolor = None
+        else:
+            self.quivercmap = None
+            self.quivercolor = cmap
+        self.makeQuiver()
 
     def exportfields(self):
         path = '/Users/sbarnett/PycharmProjects/PyV/exportloc'
         fmt = '%d', '%d', '%1.3f', '%1.3f'
-        for frame in range(self.x.shape[2]):
-            array = np.vstack((self.x[:, :, frame].flatten('F'), self.y[:, :, frame].flatten('F'),
-                               self.u[:, :, frame].flatten('F'), self.v[:, :, frame].flatten('F'))).T
+        for frame in range(self.piv.x.shape[2]):
+            array = np.vstack((self.piv.x[:, :, frame].flatten('F'), self.piv.y[:, :, frame].flatten('F'),
+                               self.piv.u[:, :, frame].flatten('F'), self.piv.v[:, :, frame].flatten('F'))).T
             np.savetxt(path+'/'+str(frame)+'.txt', array, delimiter=',', fmt=fmt)
         self.statusbar.showMessage("PIV data exported to: "+path, 2000)
 
@@ -251,25 +282,26 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def alignment(self):
         if self.currentimage != 0:
             frame = self.currentimage-1
-            averageU = np.mean(self.u[:,:,frame])
-            averageV = np.mean(self.v[:,:,frame])
+            averageU = np.mean(self.piv.u[:,:,frame])
+            averageV = np.mean(self.piv.v[:,:,frame])
             meanvector = np.array([averageU,averageV])
-            upper = np.vstack((self.u[:,:,frame].flatten('F'),self.v[:,:,frame].flatten('F'))).T@meanvector
-            lower = np.sqrt(self.u[:, :, frame].flatten('F')**2+self.v[:, :, frame].flatten('F')**2) * np.sqrt(meanvector[0]**2+meanvector[1]**2)
+            upper = np.vstack((self.piv.u[:,:,frame].flatten('F'),self.piv.v[:,:,frame].flatten('F'))).T@meanvector
+            lower = np.sqrt(self.piv.u[:, :, frame].flatten('F')**2+self.piv.v[:, :, frame].flatten('F')**2) * np.sqrt(meanvector[0]**2+meanvector[1]**2)
             value = np.divide(upper,lower)
             map = np.reshape(value,(63,63))
-            map = resize(map,(self.u.shape[0]*self.windowsize//2,self.u.shape[1]*self.windowsize//2),order=0,preserve_range=True)
+            map = resize(map,(self.piv.u.shape[0]*self.windowsize//2,self.piv.u.shape[1]*self.windowsize//2),order=0,preserve_range=True)
             self.imagehandle.set_data(map)
-            self.imagehandle.set_extent([self.windowsize/4, self.imstack.width-self.windowsize/4, self.windowsize/4, self.imstack.width-self.windowsize/4])
+            self.extent = [self.windowsize/4, self.imstack.width-self.windowsize/4, self.windowsize/4, self.imstack.width-self.windowsize/4]
+            self.imagehandle.set_extent(self.extent)
             self.imagehandle.set_cmap('viridis')
             self.imagehandle.set_clim(-1, 1)
             self.mplwidget.canvas.fig.canvas.draw()
 
 
     def orientation(self):
-        rho = np.sqrt(self.u[:, :, self.currentimage]**2+self.v[:, :, self.currentimage]**2)
-        phi = np.arctan2(self.v[:, :, self.currentimage], self.u[:, :, self.currentimage])
-        theta = resize(np.rad2deg(phi), (self.u.shape[0]*self.windowsize//2,self.u.shape[1]*self.windowsize//2), order=1, preserve_range=True)
+        rho = np.sqrt(self.piv.u[:, :, self.currentimage]**2+self.piv.v[:, :, self.currentimage]**2)
+        phi = np.arctan2(self.piv.v[:, :, self.currentimage], self.piv.u[:, :, self.currentimage])
+        theta = resize(np.rad2deg(phi), (self.piv.u.shape[0]*self.windowsize//2,self.piv.u.shape[1]*self.windowsize//2), order=1, preserve_range=True)
         self.imagehandle.set_data(theta+180)
         self.imagehandle.set_clim(0, 360)
         self.imagehandle.set_cmap('hsv')
@@ -282,26 +314,26 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         files = os.listdir(path)
         files.remove('.DS_Store')
         counter = 0
-        self.x = np.zeros((63, 63, 9))
-        self.y = np.zeros((63, 63, 9))
-        self.u = np.zeros((63, 63, 9))
-        self.v = np.zeros((63, 63, 9))
+        self.piv.x = np.zeros((63, 63, 9))
+        self.piv.y = np.zeros((63, 63, 9))
+        self.piv.u = np.zeros((63, 63, 9))
+        self.piv.v = np.zeros((63, 63, 9))
         files = self.natsort(files)
         for file in files:
             if file[-4:] == '.txt':
                 array = np.loadtxt(os.path.join(path,file), delimiter=',')
-                self.x[:, :, counter] = np.reshape(array[:,0],[int(np.max(array[:,0]/(array[0,0]+1)))+1,int(np.max(array[:,1]/(array[0,1]+1)))+1])
-                self.y[:, :, counter] = np.reshape(array[:,1],[int(np.max(array[:,0]/(array[0,0]+1)))+1,int(np.max(array[:,1]/(array[0,1]+1)))+1])
-                self.u[:, :, counter] = np.reshape(array[:,2],[int(np.max(array[:,0]/(array[0,0]+1)))+1,int(np.max(array[:,1]/(array[0,1]+1)))+1])
-                self.v[:, :, counter] = np.reshape(array[:,3],[int(np.max(array[:,0]/(array[0,0]+1)))+1,int(np.max(array[:,1]/(array[0,1]+1)))+1])
+                self.piv.x[:, :, counter] = np.reshape(array[:,0],[int(np.max(array[:,0]/(array[0,0]+1)))+1,int(np.max(array[:,1]/(array[0,1]+1)))+1])
+                self.piv.y[:, :, counter] = np.reshape(array[:,1],[int(np.max(array[:,0]/(array[0,0]+1)))+1,int(np.max(array[:,1]/(array[0,1]+1)))+1])
+                self.piv.u[:, :, counter] = np.reshape(array[:,2],[int(np.max(array[:,0]/(array[0,0]+1)))+1,int(np.max(array[:,1]/(array[0,1]+1)))+1])
+                self.piv.v[:, :, counter] = np.reshape(array[:,3],[int(np.max(array[:,0]/(array[0,0]+1)))+1,int(np.max(array[:,1]/(array[0,1]+1)))+1])
                 counter += 1
         self.makeQuiver()
 
     def calculatevrms(self):
         """Calculate root mean square velocity of the vectorfield"""
         self.vrms = []
-        for frame in range(self.u.shape[2]):
-            velocities = np.sqrt(self.u[:, :, frame]**2+self.v[:, :, frame]**2)
+        for frame in range(self.piv.u.shape[2]):
+            velocities = np.sqrt(self.piv.u[:, :, frame]**2+self.piv.v[:, :, frame]**2)
             self.vrms.append(np.sqrt(np.nanmean(velocities**2)))
         self.tableview.addData(self.vrms,'Vrms')
 
@@ -310,10 +342,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def calculateLinearOrderParameter(self):
         self.LOP = []
-        for frame in range(self.u.shape[2]):
-            mean_u = np.nanmean(self.u[:,:,frame])
-            mean_v = np.nanmean(self.v[:,:,frame])
-            mean_uv2 = np.nanmean(self.u[:,:,frame]**2 + self.v[:,:,frame]**2)
+        for frame in range(self.piv.u.shape[2]):
+            mean_u = np.nanmean(self.piv.u[:,:,frame])
+            mean_v = np.nanmean(self.piv.v[:,:,frame])
+            mean_uv2 = np.nanmean(self.piv.u[:,:,frame]**2 + self.piv.v[:,:,frame]**2)
             self.LOP.append((mean_u**2+mean_v**2)/mean_uv2)
         self.tableview.addData(self.LOP,'LinearOrder')
 
@@ -381,6 +413,9 @@ class Pivdata():
         self.v = []
         self.pixelsize = 1
         self.timeinterval = 1
+        self.windowsize = 32
+
+
 
 
 
