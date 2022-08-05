@@ -26,273 +26,6 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_2">
         <item>
-         <widget class="QTabWidget" name="tabs">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>250</width>
-            <height>300</height>
-           </size>
-          </property>
-          <property name="currentIndex">
-           <number>1</number>
-          </property>
-          <widget class="QWidget" name="tab">
-           <attribute name="title">
-            <string>PIV</string>
-           </attribute>
-           <widget class="QWidget" name="formLayoutWidget">
-            <property name="geometry">
-             <rect>
-              <x>30</x>
-              <y>20</y>
-              <width>164</width>
-              <height>193</height>
-             </rect>
-            </property>
-            <layout class="QFormLayout" name="formLayout">
-             <item row="1" column="1">
-              <widget class="QLineEdit" name="windowsizeinput">
-               <property name="toolTip">
-                <string>PIV window size (pixels)</string>
-               </property>
-               <property name="text">
-                <string>32</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="label_3">
-               <property name="text">
-                <string>Max Speed</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="QLineEdit" name="maxspeedinput">
-               <property name="toolTip">
-                <string>Quiver color will be clipped to this value</string>
-               </property>
-               <property name="text">
-                <string>100</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="0">
-              <widget class="QLabel" name="label_2">
-               <property name="text">
-                <string>Pixel Size</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="1">
-              <widget class="QLineEdit" name="pixelsizeinput">
-               <property name="toolTip">
-                <string>Pixel size of the data, PIV results will use this as the scale</string>
-               </property>
-               <property name="text">
-                <string>1</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label">
-               <property name="text">
-                <string>Window Size</string>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="0">
-              <widget class="QLabel" name="label_4">
-               <property name="text">
-                <string>Autocontrast</string>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="1">
-              <widget class="QCheckBox" name="autocontrast">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text">
-                <string/>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="1">
-              <widget class="QLineEdit" name="arrowscaleinput">
-               <property name="toolTip">
-                <string>Set arrow scaling for visualisation</string>
-               </property>
-               <property name="text">
-                <string>1</string>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="0">
-              <widget class="QLabel" name="label_5">
-               <property name="text">
-                <string>Arrow Scale</string>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="0">
-              <widget class="QLabel" name="label_6">
-               <property name="text">
-                <string>Time interval</string>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="1">
-              <widget class="QLineEdit" name="timeintervalinput">
-               <property name="text">
-                <string>1</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-           <widget class="QPushButton" name="runPIVbutton">
-            <property name="geometry">
-             <rect>
-              <x>50</x>
-              <y>220</y>
-              <width>113</width>
-              <height>32</height>
-             </rect>
-            </property>
-            <property name="toolTip">
-             <string>Perform PIV analysis with current settings</string>
-            </property>
-            <property name="text">
-             <string>Run PIV</string>
-            </property>
-           </widget>
-          </widget>
-          <widget class="QWidget" name="tab_2">
-           <attribute name="title">
-            <string>Analysis</string>
-           </attribute>
-           <widget class="QPushButton" name="vrmsbutton">
-            <property name="geometry">
-             <rect>
-              <x>10</x>
-              <y>10</y>
-              <width>104</width>
-              <height>32</height>
-             </rect>
-            </property>
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>104</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>Vrms</string>
-            </property>
-           </widget>
-           <widget class="QPushButton" name="linearorderbutton">
-            <property name="geometry">
-             <rect>
-              <x>120</x>
-              <y>10</y>
-              <width>104</width>
-              <height>32</height>
-             </rect>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>104</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>Linear Order</string>
-            </property>
-           </widget>
-           <widget class="QPushButton" name="orientationbutton">
-            <property name="geometry">
-             <rect>
-              <x>120</x>
-              <y>40</y>
-              <width>104</width>
-              <height>32</height>
-             </rect>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>104</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>104</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>Orientation</string>
-            </property>
-           </widget>
-           <widget class="QPushButton" name="alignmentbutton">
-            <property name="geometry">
-             <rect>
-              <x>10</x>
-              <y>40</y>
-              <width>104</width>
-              <height>32</height>
-             </rect>
-            </property>
-            <property name="text">
-             <string>Alignment</string>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="fieldcolormapinput">
-            <property name="geometry">
-             <rect>
-              <x>120</x>
-              <y>80</y>
-              <width>104</width>
-              <height>26</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QLabel" name="label_7">
-            <property name="geometry">
-             <rect>
-              <x>15</x>
-              <y>75</y>
-              <width>92</width>
-              <height>31</height>
-             </rect>
-            </property>
-            <property name="text">
-             <string>Field Colormap</string>
-            </property>
-           </widget>
-          </widget>
-         </widget>
-        </item>
-        <item>
          <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
            <spacer name="horizontalSpacer_2">
@@ -311,7 +44,300 @@
            </spacer>
           </item>
           <item>
+           <widget class="QTabWidget" name="tabs">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>250</width>
+              <height>300</height>
+             </size>
+            </property>
+            <property name="currentIndex">
+             <number>0</number>
+            </property>
+            <widget class="QWidget" name="tab">
+             <attribute name="title">
+              <string>PIV</string>
+             </attribute>
+             <widget class="QWidget" name="formLayoutWidget">
+              <property name="geometry">
+               <rect>
+                <x>30</x>
+                <y>20</y>
+                <width>165</width>
+                <height>311</height>
+               </rect>
+              </property>
+              <layout class="QFormLayout" name="formLayout">
+               <item row="1" column="1">
+                <widget class="QLineEdit" name="windowsizeinput">
+                 <property name="toolTip">
+                  <string>PIV window size (pixels)</string>
+                 </property>
+                 <property name="text">
+                  <string>32</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="label_3">
+                 <property name="text">
+                  <string>Max Speed</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QLineEdit" name="maxspeedinput">
+                 <property name="toolTip">
+                  <string>Quiver color will be clipped to this value</string>
+                 </property>
+                 <property name="text">
+                  <string>100</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="0">
+                <widget class="QLabel" name="label_2">
+                 <property name="text">
+                  <string>Pixel Size</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="1">
+                <widget class="QLineEdit" name="pixelsizeinput">
+                 <property name="toolTip">
+                  <string>Pixel size of the data, PIV results will use this as the scale</string>
+                 </property>
+                 <property name="text">
+                  <string>1</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="label">
+                 <property name="text">
+                  <string>Window Size</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="6" column="0">
+                <widget class="QLabel" name="label_4">
+                 <property name="text">
+                  <string>Autocontrast</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="6" column="1">
+                <widget class="QCheckBox" name="autocontrast">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="1">
+                <widget class="QLineEdit" name="arrowscaleinput">
+                 <property name="toolTip">
+                  <string>Set arrow scaling for visualisation</string>
+                 </property>
+                 <property name="text">
+                  <string>1</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="0">
+                <widget class="QLabel" name="label_5">
+                 <property name="text">
+                  <string>Arrow Scale</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="5" column="0">
+                <widget class="QLabel" name="label_6">
+                 <property name="text">
+                  <string>Time interval</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="5" column="1">
+                <widget class="QLineEdit" name="timeintervalinput">
+                 <property name="text">
+                  <string>1</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="7" column="0">
+                <widget class="QLabel" name="label_8">
+                 <property name="text">
+                  <string>Show Image</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="7" column="1">
+                <widget class="QCheckBox" name="showimagecheck">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QPushButton" name="runPIVbutton">
+              <property name="geometry">
+               <rect>
+                <x>60</x>
+                <y>450</y>
+                <width>113</width>
+                <height>32</height>
+               </rect>
+              </property>
+              <property name="toolTip">
+               <string>Perform PIV analysis with current settings</string>
+              </property>
+              <property name="text">
+               <string>Run PIV</string>
+              </property>
+             </widget>
+            </widget>
+            <widget class="QWidget" name="tab_2">
+             <attribute name="title">
+              <string>Analysis</string>
+             </attribute>
+             <widget class="QPushButton" name="vrmsbutton">
+              <property name="geometry">
+               <rect>
+                <x>10</x>
+                <y>10</y>
+                <width>104</width>
+                <height>32</height>
+               </rect>
+              </property>
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>104</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Vrms</string>
+              </property>
+             </widget>
+             <widget class="QPushButton" name="linearorderbutton">
+              <property name="geometry">
+               <rect>
+                <x>120</x>
+                <y>10</y>
+                <width>104</width>
+                <height>32</height>
+               </rect>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>104</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Linear Order</string>
+              </property>
+             </widget>
+             <widget class="QPushButton" name="orientationbutton">
+              <property name="geometry">
+               <rect>
+                <x>120</x>
+                <y>40</y>
+                <width>104</width>
+                <height>32</height>
+               </rect>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>104</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>104</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Orientation</string>
+              </property>
+             </widget>
+             <widget class="QPushButton" name="alignmentbutton">
+              <property name="geometry">
+               <rect>
+                <x>10</x>
+                <y>40</y>
+                <width>104</width>
+                <height>32</height>
+               </rect>
+              </property>
+              <property name="text">
+               <string>Alignment</string>
+              </property>
+             </widget>
+             <widget class="QComboBox" name="fieldcolormapinput">
+              <property name="geometry">
+               <rect>
+                <x>120</x>
+                <y>80</y>
+                <width>104</width>
+                <height>26</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="QLabel" name="label_7">
+              <property name="geometry">
+               <rect>
+                <x>15</x>
+                <y>75</y>
+                <width>92</width>
+                <height>31</height>
+               </rect>
+              </property>
+              <property name="text">
+               <string>Field Colormap</string>
+              </property>
+             </widget>
+            </widget>
+           </widget>
+          </item>
+          <item>
            <widget class="QLabeledDoubleRangeSlider" name="contrastslider">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
             <property name="minimumSize">
              <size>
               <width>80</width>
@@ -381,6 +407,9 @@
      <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
        <widget class="QSlider" name="stackslider">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -416,6 +445,14 @@
     <property name="title">
      <string>File</string>
     </property>
+    <widget class="QMenu" name="menuImport_Fields">
+     <property name="title">
+      <string>Import Fields</string>
+     </property>
+     <addaction name="actionImport_fields_from_PyV"/>
+    </widget>
+    <addaction name="actionopen_2"/>
+    <addaction name="menuImport_Fields"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -515,6 +552,16 @@
    </property>
    <property name="toolTip">
     <string>Import fields</string>
+   </property>
+  </action>
+  <action name="actionopen_2">
+   <property name="text">
+    <string>open</string>
+   </property>
+  </action>
+  <action name="actionImport_fields_from_PyV">
+   <property name="text">
+    <string>Import fields from PyV</string>
    </property>
   </action>
  </widget>
