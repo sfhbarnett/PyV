@@ -130,6 +130,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.linearorderbutton.clicked.connect(self.calculateLinearOrderParameter)
         self.fieldcolormapinput.currentIndexChanged.connect(self.changecmap)
         self.showimagecheck.stateChanged.connect(self.showImage)
+        self.linearisebutton.clicked.connect(self.lineariseField)
+        self.showlinearfield.stateChanged.connect(self.showlinear)
 
     def get_file(self):
         self.mplwidget.canvas.axes.cla()
@@ -191,20 +193,26 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.quiver.remove()
         if self.currentimage != 0 and self.showQuiver == True:
             frame = self.currentimage-1
-            M = np.sqrt(self.piv.u[:, :, frame]*self.piv.u[:, :, frame]+self.piv.v[:, :, frame]*self.piv.v[:, :, frame])
+            if self.showlinearfield.isChecked():
+                u = self.piv.ru[:, :, frame]
+                v = self.piv.rv[:, :, frame]
+            else:
+                u = self.piv.u[:, :, frame]
+                v = self.piv.v[:, :, frame]
+            M = np.sqrt(u*u+v*v)
             clipM = np.clip(M, 0, self.maxdispspeed)
             if self.quivercmap is not None:
                 self.quiver = self.mplwidget.canvas.axes.quiver(self.piv.x[:, :, frame]+1,
                                                                 self.piv.y[:, :, frame]+1,
-                                                                self.piv.u[:, :, frame]*self.arrowscale,
-                                                                self.piv.v[:, :, frame]*self.arrowscale, clipM,
+                                                                u*self.arrowscale,
+                                                                v*self.arrowscale, clipM,
                                                                 scale_units='xy', scale=1,
                                                                 cmap=self.quivercmap)
             else:
                 self.quiver = self.mplwidget.canvas.axes.quiver(self.piv.x[:, :, frame]+1,
                                                                 self.piv.y[:, :, frame]+1,
-                                                                self.piv.u[:, :, frame]*self.arrowscale,
-                                                                self.piv.v[:, :, frame]*self.arrowscale,
+                                                                u*self.arrowscale,
+                                                                v*self.arrowscale,
                                                                 color=self.quivercolor,
                                                                 scale_units='xy', scale=1)
         else:
@@ -331,6 +339,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.piv.u[:, :, counter] = np.reshape(array[:,2],[int(np.max(array[:,0]/(array[0,0]+1)))+1,int(np.max(array[:,1]/(array[0,1]+1)))+1])
                 self.piv.v[:, :, counter] = np.reshape(array[:,3],[int(np.max(array[:,0]/(array[0,0]+1)))+1,int(np.max(array[:,1]/(array[0,1]+1)))+1])
                 counter += 1
+        self.piv.width = int(np.max(array[:, 0] / (array[0, 0] + 1))) + 1
+        self.piv.height = int(np.max(array[:, 1] / (array[0, 1] + 1))) + 1
+        self.piv.nfields = counter
         self.showQuiver = True
         self.makeQuiver()
 
@@ -341,6 +352,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             velocities = np.sqrt(self.piv.u[:, :, frame]**2+self.piv.v[:, :, frame]**2)
             self.vrms.append(np.sqrt(np.nanmean(velocities**2)))
         self.tableview.addData(self.vrms,'Vrms')
+
+    def lineariseField(self):
+        self.piv.lineariseField()
+        self.makeQuiver()
 
     def showImage(self):
         if self.imstack is not None and self.showimagecheck.isChecked():
@@ -357,6 +372,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.imagehandle.set_data(np.array([[], []]))
         self.mplwidget.canvas.figure.canvas.draw_idle()
 
+    def showlinear(self):
+        self.makeQuiver()
+
     def calculateLinearOrderParameter(self):
         self.LOP = []
         for frame in range(self.piv.u.shape[2]):
@@ -366,7 +384,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.LOP.append((mean_u**2+mean_v**2)/mean_uv2)
         self.tableview.addData(self.LOP, 'LinearOrder')
 
-    def natsort(self,tosort):
+    def natsort(self, tosort):
         """Natural sort file strings"""
         convert = lambda text: int(text) if text.isdigit() else text.lower()
         alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
@@ -417,7 +435,7 @@ class TableView(QtWidgets.QTableWidget):
             self.tablewidget.setRowCount(len(data))
         row = 0
         for el in data:
-            cell = QtWidgets.QTableWidgetItem(str(round(el, 4)))
+            cell = QtWidgets.QTableWidgetItem(str(round(el, 3)))
             self.tablewidget.setItem(row, col, cell)
             row += 1
 
@@ -436,10 +454,12 @@ class Pivdata():
         self.pixelsize = 1
         self.timeinterval = 1
         self.windowsize = 32
+        self.halfwin = self.windowsize/2
 
-    def rotaticity(self, x, y, u, v, cx, cy):
+    def rotacity(self, x, y, u, v, cx, cy):
         x = x-cx
         y = y-cy
+        mag = np.linalg.norm(np.array([u,v]))
         theta = np.rad2deg(np.arctan2(y,x))+180
         fromN = np.deg2rad(270-theta)
         rotmat = np.array([[np.cos(fromN), -np.sin(fromN)], [np.sin(fromN), np.cos(fromN)]])
@@ -457,13 +477,15 @@ class Pivdata():
         elif angle >= 270:
             xcomponent = -1 * ((angle - 270) / 90)
             ycomponent = np.sqrt(1 - xcomponent ** 2)
-        return xcomponent, ycomponent
+        return xcomponent*mag, ycomponent*mag
 
     def lineariseField(self):
+        self.ru = np.zeros((self.width,self.height,self.nfields))
+        self.rv = np.zeros((self.width, self.height, self.nfields))
         for ff in range(self.nfields):
             for xx in range(self.height):
                 for yy in range(self.width):
-                    xcomp, ycomp = self.rotacity(self.x[xx,yy,ff],self.y[xx,yy,ff],self.u[xx,yy,ff],self.v[xx,yy,ff],self.width/2,self.height/2)
+                    xcomp, ycomp = self.rotacity(self.x[xx,yy,ff]/self.halfwin,self.y[xx,yy,ff]/self.halfwin,self.u[xx,yy,ff],-self.v[xx,yy,ff],self.width/2,self.height/2)
                     self.ru[xx,yy,ff] = xcomp
                     self.rv[xx,yy,ff] = ycomp
 
