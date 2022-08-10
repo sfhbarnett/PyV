@@ -218,6 +218,8 @@ class Ui_MainWindow(object):
         self.menuFile.setObjectName("menuFile")
         self.menuImport_Fields = QtWidgets.QMenu(self.menuFile)
         self.menuImport_Fields.setObjectName("menuImport_Fields")
+        self.menuExport_Fields = QtWidgets.QMenu(self.menuFile)
+        self.menuExport_Fields.setObjectName("menuExport_Fields")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
@@ -266,9 +268,19 @@ class Ui_MainWindow(object):
         self.actionopen_2.setObjectName("actionopen_2")
         self.actionImport_fields_from_PyV = QtGui.QAction(MainWindow)
         self.actionImport_fields_from_PyV.setObjectName("actionImport_fields_from_PyV")
+        self.actionExport_as_csv = QtGui.QAction(MainWindow)
+        self.actionExport_as_csv.setObjectName("actionExport_as_csv")
+        self.actionExport_as_hdf5 = QtGui.QAction(MainWindow)
+        self.actionExport_as_hdf5.setObjectName("actionExport_as_hdf5")
+        self.actionImport_fields_from_hdf5 = QtGui.QAction(MainWindow)
+        self.actionImport_fields_from_hdf5.setObjectName("actionImport_fields_from_hdf5")
         self.menuImport_Fields.addAction(self.actionImport_fields_from_PyV)
+        self.menuImport_Fields.addAction(self.actionImport_fields_from_hdf5)
+        self.menuExport_Fields.addAction(self.actionExport_as_csv)
+        self.menuExport_Fields.addAction(self.actionExport_as_hdf5)
         self.menuFile.addAction(self.actionopen_2)
         self.menuFile.addAction(self.menuImport_Fields.menuAction())
+        self.menuFile.addAction(self.menuExport_Fields.menuAction())
         self.menubar.addAction(self.menuFile.menuAction())
         self.toolBar.addAction(self.actionopen)
         self.toolBar.addAction(self.actionSave)
@@ -280,7 +292,7 @@ class Ui_MainWindow(object):
         self.toolBar.addAction(self.actionhome)
 
         self.retranslateUi(MainWindow)
-        self.tabs.setCurrentIndex(0)
+        self.tabs.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -319,6 +331,7 @@ class Ui_MainWindow(object):
         self.stackpos.setText(_translate("MainWindow", "0"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
         self.menuImport_Fields.setTitle(_translate("MainWindow", "Import Fields"))
+        self.menuExport_Fields.setTitle(_translate("MainWindow", "Export Fields"))
         self.toolBar.setWindowTitle(_translate("MainWindow", "toolBar"))
         self.actionzoom.setText(_translate("MainWindow", "zoom"))
         self.actionzoom.setToolTip(_translate("MainWindow", "zooms on image"))
@@ -330,8 +343,11 @@ class Ui_MainWindow(object):
         self.actionexport.setToolTip(_translate("MainWindow", "export quiver fields"))
         self.actionimport.setText(_translate("MainWindow", "import"))
         self.actionimport.setToolTip(_translate("MainWindow", "Import fields"))
-        self.actionopen_2.setText(_translate("MainWindow", "open"))
+        self.actionopen_2.setText(_translate("MainWindow", "Open"))
         self.actionImport_fields_from_PyV.setText(_translate("MainWindow", "Import fields from PyV"))
+        self.actionExport_as_csv.setText(_translate("MainWindow", "Export as csv"))
+        self.actionExport_as_hdf5.setText(_translate("MainWindow", "Export as hdf5"))
+        self.actionImport_fields_from_hdf5.setText(_translate("MainWindow", "Import fields from hdf5"))
 from mplwidget import MplWidget
 from superqt import QLabeledDoubleRangeSlider
 

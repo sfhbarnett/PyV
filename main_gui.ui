@@ -58,7 +58,7 @@
              </size>
             </property>
             <property name="currentIndex">
-             <number>0</number>
+             <number>1</number>
             </property>
             <widget class="QWidget" name="tab">
              <attribute name="title">
@@ -535,9 +535,18 @@
       <string>Import Fields</string>
      </property>
      <addaction name="actionImport_fields_from_PyV"/>
+     <addaction name="actionImport_fields_from_hdf5"/>
+    </widget>
+    <widget class="QMenu" name="menuExport_Fields">
+     <property name="title">
+      <string>Export Fields</string>
+     </property>
+     <addaction name="actionExport_as_csv"/>
+     <addaction name="actionExport_as_hdf5"/>
     </widget>
     <addaction name="actionopen_2"/>
     <addaction name="menuImport_Fields"/>
+    <addaction name="menuExport_Fields"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -641,12 +650,27 @@
   </action>
   <action name="actionopen_2">
    <property name="text">
-    <string>open</string>
+    <string>Open</string>
    </property>
   </action>
   <action name="actionImport_fields_from_PyV">
    <property name="text">
     <string>Import fields from PyV</string>
+   </property>
+  </action>
+  <action name="actionExport_as_csv">
+   <property name="text">
+    <string>Export as csv</string>
+   </property>
+  </action>
+  <action name="actionExport_as_hdf5">
+   <property name="text">
+    <string>Export as hdf5</string>
+   </property>
+  </action>
+  <action name="actionImport_fields_from_hdf5">
+   <property name="text">
+    <string>Import fields from hdf5</string>
    </property>
   </action>
  </widget>

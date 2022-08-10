@@ -10,8 +10,9 @@ class MplCanvas(FigureCanvasQTAgg):
         self.axes = self.fig.add_subplot(111)
         super(MplCanvas, self).__init__(self.fig)
 
+
 class MplWidget(QtWidgets.QWidget):
-    def __init__(self,parent=None):
+    def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
         self.canvas = MplCanvas()
         self.canvas.axes.get_xaxis().set_visible(False)
