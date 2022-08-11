@@ -3,20 +3,20 @@ import traceback
 
 from PyV.PIV import PIV
 from tiffstack import tiffstack
-import matplotlib.pyplot as plt
 from piv_filters import localfilt
 from naninterp import naninterp
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
 from PyQt6 import QtCore, QtWidgets
+import matplotlib.pyplot as plt
 from PyQt6.QtGui import QIcon, QIntValidator, QDoubleValidator
-import sys
-import numpy as np
 from main_gui import Ui_MainWindow
 from superqt import QLabeledDoubleRangeSlider
 import multiprocessing
 from skimage.transform import resize
 import re
 import h5py
+import sys
+import numpy as np
 
 # pyuic6 - o main_gui.py - x main_gui.ui
 
@@ -39,29 +39,17 @@ class Worker(QtCore.QRunnable):
 
     @QtCore.pyqtSlot()
     def run(self):
-        with multiprocessing.Pool(processes=4) as pool:
+        with multiprocessing.Pool() as pool:
             for frame in range(self.imstack.nfiles-1):
                 pool.apply_async(pivwrapper, args=(self.imstack.getimage(frame), self.imstack.getimage(frame+1), self.windowsize, frame),callback=self.emitresults)
             pool.close()
             pool.join()
 
-        # try:
-        #     result = self.func(*self.args, **self.kwargs)
-        # except:
-        #     traceback.print_exc()
-        #     exctype, value = sys.exc_info()[:2]
-        #     self.signals.error.emit((exctype, value, traceback.format_exc()))
-        # else:
-        #     self.signals.result.emit(result)
-        # finally:
-        #     self.signals.finished.emit()
-
     @QtCore.pyqtSlot()
     def emitresults(self, results):
-        print("hello")
         self.signals.result.emit(results)
 
-def pivwrapper(image1,image2,windowsize,frame):
+def pivwrapper(image1, image2, windowsize, frame):
     print("working frame " + str(frame))
     overlap = 0.5
     x, y, u, v = PIV(image1, image2, windowsize, overlap)
