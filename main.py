@@ -1,50 +1,62 @@
 import os
+import traceback
+
 from PyV.PIV import PIV
 from tiffstack import tiffstack
-import matplotlib.pyplot as plt
 from piv_filters import localfilt
 from naninterp import naninterp
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
 from PyQt6 import QtCore, QtWidgets
+import matplotlib.pyplot as plt
 from PyQt6.QtGui import QIcon, QIntValidator, QDoubleValidator
-import sys
-import numpy as np
 from main_gui import Ui_MainWindow
 from superqt import QLabeledDoubleRangeSlider
-import time
+import multiprocessing
 from skimage.transform import resize
 import re
 import h5py
+import sys
+import numpy as np
 
 # pyuic6 - o main_gui.py - x main_gui.ui
 
+class WorkerSignals(QtCore.QObject):
 
-class externalPIV(QtCore.QThread):
-    progressstatus = QtCore.pyqtSignal(int)
+    finished = QtCore.pyqtSignal()
+    error = QtCore.pyqtSignal(tuple)
+    result = QtCore.pyqtSignal(tuple)
+    progress = QtCore.pyqtSignal(int)
 
-    def __init__(self, x, y, u, v, windowsize, overlap, imstack):
-        super(QtCore.QThread, self).__init__()
-        self.u = u
-        self.v = v
-        self.x = x
-        self.y = y
-        self.windowsize = windowsize
-        self.overlap = overlap
-        self.imstack = imstack
 
+class Worker(QtCore.QRunnable):
+
+    def __init__(self, *args, **kwargs):
+        super(Worker, self).__init__()
+        self.imstack = args[0]
+        self.windowsize = args[1]
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
+
+    @QtCore.pyqtSlot()
     def run(self):
-        for frame in range(self.imstack.nfiles-1):
-            x, y, u, v = PIV(self.imstack.getimage(frame), self.imstack.getimage(frame+1),
-                             self.windowsize, self.overlap)
-            u, v = localfilt(x, y, u, v, 2)
-            u = naninterp(u)
-            v = naninterp(v)
-            self.x[:, :, frame] = x
-            self.y[:, :, frame] = y
-            self.u[:, :, frame] = u
-            self.v[:, :, frame] = v
-            self.progressstatus.emit(frame)
-        return self.x, self.y, self.u, self.v
+        with multiprocessing.Pool() as pool:
+            for frame in range(self.imstack.nfiles-1):
+                pool.apply_async(pivwrapper, args=(self.imstack.getimage(frame), self.imstack.getimage(frame+1), self.windowsize, frame),callback=self.emitresults)
+            pool.close()
+            pool.join()
+
+    @QtCore.pyqtSlot()
+    def emitresults(self, results):
+        self.signals.result.emit(results)
+
+def pivwrapper(image1, image2, windowsize, frame):
+    print("working frame " + str(frame))
+    overlap = 0.5
+    x, y, u, v = PIV(image1, image2, windowsize, overlap)
+    u, v = localfilt(x, y, u, v, 2)
+    u = naninterp(u)
+    v = naninterp(v)
+    return x, y, u, v, frame
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -83,6 +95,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.arrowscaleinput.setValidator(QDoubleValidator())
         self.timeinterval = float(self.timeintervalinput.text())
         self.timeintervalinput.setValidator(QDoubleValidator())
+        self.centerXinput.setValidator(QDoubleValidator())
+        self.centerYinput.setValidator(QDoubleValidator())
         self.tableview = TableView(self.table)
         self.colormaps = ['jet', 'viridis', 'plasma', 'inferno']
         self.solids = ['black', 'green', 'red', 'cyan', 'magenta', 'yellow']
@@ -93,6 +107,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.progressbar = QtWidgets.QProgressBar()
         self.statusbar.addPermanentWidget(self.progressbar)
         self.alignmentbutton.setStyleSheet("")
+        self.threadpool = QtCore.QThreadPool()
         self.setFocus()
 
     def seticons(self):
@@ -185,22 +200,36 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.piv.y = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
         self.piv.u = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
         self.piv.v = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
+        self.threadpool = QtCore.QThreadPool()
+        worker = Worker(self.imstack, self.windowsize)
+        worker.signals.result.connect(self.assignpivresult)
+        self.threadpool.start(worker)
+
         # self.piv = externalPIV(self.x, self.y, self.u, self.v, self.windowsize, overlap, self.imstack)
         # self.piv.progressstatus.connect(self.updateprogress)
         # self.piv.start()
-        start = time.time()
-        for frame in range(self.imstack.nfiles-1):
-            x, y, u, v = PIV(self.imstack.getimage(frame), self.imstack.getimage(frame+1), self.windowsize, overlap)
-            u, v = localfilt(x, y, u, v, 2)
-            u = naninterp(u)
-            v = naninterp(v)
-            self.piv.x[:, :, frame] = x * self.pixelsize
-            self.piv.y[:, :, frame] = y * self.pixelsize
-            self.piv.u[:, :, frame] = u * self.pixelsize / self.timeinterval
-            self.piv.v[:, :, frame] = v * self.pixelsize / self.timeinterval
+        # for frame in range(self.imstack.nfiles-1):
+        #     worker = Worker(self.pivwrapper, self.imstack.getimage(frame), self.imstack.getimage(frame+1), self.windowsize, frame)
+        #     worker.signals.result.connect(self.assignpivresult)
+        #     # x, y, u, v = PIV(self.imstack.getimage(frame), self.imstack.getimage(frame+1), self.windowsize, overlap)
+        #     # u, v = localfilt(x, y, u, v, 2)
+        #     # u = naninterp(u)
+        #     # v = naninterp(v)
+        #     # self.piv.x[:, :, frame] = x * self.pixelsize
+        #     # self.piv.y[:, :, frame] = y * self.pixelsize
+        #     # self.piv.u[:, :, frame] = u * self.pixelsize / self.timeinterval
+        #     # self.piv.v[:, :, frame] = v * self.pixelsize / self.timeinterval
+        #     self.threadpool.start(worker)
         self.showQuiver = True
-        print(time.time()-start)
         self.makeQuiver()
+
+    def assignpivresult(self, result):
+        x, y, u, v, frame = result
+        self.piv.x[:, :, frame] = x * self.pixelsize
+        self.piv.y[:, :, frame] = y * self.pixelsize
+        self.piv.u[:, :, frame] = u * self.pixelsize / self.timeinterval
+        self.piv.v[:, :, frame] = v * self.pixelsize / self.timeinterval
+        print("finished frame: " + str(frame))
 
     def makeQuiver(self):
         if self.quiver is not None:
