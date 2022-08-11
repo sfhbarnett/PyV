@@ -13,7 +13,7 @@ import sys
 import numpy as np
 from main_gui import Ui_MainWindow
 from superqt import QLabeledDoubleRangeSlider
-import time
+import multiprocessing
 from skimage.transform import resize
 import re
 import h5py
@@ -30,25 +30,45 @@ class WorkerSignals(QtCore.QObject):
 
 class Worker(QtCore.QRunnable):
 
-    def __init__(self, func, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(Worker, self).__init__()
-        self.func = func
-        self.args = args
+        self.imstack = args[0]
+        self.windowsize = args[1]
         self.kwargs = kwargs
         self.signals = WorkerSignals()
 
     @QtCore.pyqtSlot()
     def run(self):
-        try:
-            result = self.func(*self.args, **self.kwargs)
-        except:
-            traceback.print_exc()
-            exctype, value = sys.exc_info()[:2]
-            self.signals.error.emit((exctype, value, traceback.format_exc()))
-        else:
-            self.signals.result.emit(result)
-        finally:
-            self.signals.finished.emit()
+        with multiprocessing.Pool(processes=4) as pool:
+            for frame in range(self.imstack.nfiles-1):
+                pool.apply_async(pivwrapper, args=(self.imstack.getimage(frame), self.imstack.getimage(frame+1), self.windowsize, frame),callback=self.emitresults)
+            pool.close()
+            pool.join()
+
+        # try:
+        #     result = self.func(*self.args, **self.kwargs)
+        # except:
+        #     traceback.print_exc()
+        #     exctype, value = sys.exc_info()[:2]
+        #     self.signals.error.emit((exctype, value, traceback.format_exc()))
+        # else:
+        #     self.signals.result.emit(result)
+        # finally:
+        #     self.signals.finished.emit()
+
+    @QtCore.pyqtSlot()
+    def emitresults(self, results):
+        print("hello")
+        self.signals.result.emit(results)
+
+def pivwrapper(image1,image2,windowsize,frame):
+    print("working frame " + str(frame))
+    overlap = 0.5
+    x, y, u, v = PIV(image1, image2, windowsize, overlap)
+    u, v = localfilt(x, y, u, v, 2)
+    u = naninterp(u)
+    v = naninterp(v)
+    return x, y, u, v, frame
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -192,31 +212,28 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.piv.y = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
         self.piv.u = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
         self.piv.v = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
+        self.threadpool = QtCore.QThreadPool()
+        worker = Worker(self.imstack, self.windowsize)
+        worker.signals.result.connect(self.assignpivresult)
+        self.threadpool.start(worker)
+
         # self.piv = externalPIV(self.x, self.y, self.u, self.v, self.windowsize, overlap, self.imstack)
         # self.piv.progressstatus.connect(self.updateprogress)
         # self.piv.start()
-        for frame in range(self.imstack.nfiles-1):
-            worker = Worker(self.pivwrapper, self.imstack.getimage(frame), self.imstack.getimage(frame+1), self.windowsize, frame)
-            worker.signals.result.connect(self.assignpivresult)
-            # x, y, u, v = PIV(self.imstack.getimage(frame), self.imstack.getimage(frame+1), self.windowsize, overlap)
-            # u, v = localfilt(x, y, u, v, 2)
-            # u = naninterp(u)
-            # v = naninterp(v)
-            # self.piv.x[:, :, frame] = x * self.pixelsize
-            # self.piv.y[:, :, frame] = y * self.pixelsize
-            # self.piv.u[:, :, frame] = u * self.pixelsize / self.timeinterval
-            # self.piv.v[:, :, frame] = v * self.pixelsize / self.timeinterval
-            self.threadpool.start(worker)
+        # for frame in range(self.imstack.nfiles-1):
+        #     worker = Worker(self.pivwrapper, self.imstack.getimage(frame), self.imstack.getimage(frame+1), self.windowsize, frame)
+        #     worker.signals.result.connect(self.assignpivresult)
+        #     # x, y, u, v = PIV(self.imstack.getimage(frame), self.imstack.getimage(frame+1), self.windowsize, overlap)
+        #     # u, v = localfilt(x, y, u, v, 2)
+        #     # u = naninterp(u)
+        #     # v = naninterp(v)
+        #     # self.piv.x[:, :, frame] = x * self.pixelsize
+        #     # self.piv.y[:, :, frame] = y * self.pixelsize
+        #     # self.piv.u[:, :, frame] = u * self.pixelsize / self.timeinterval
+        #     # self.piv.v[:, :, frame] = v * self.pixelsize / self.timeinterval
+        #     self.threadpool.start(worker)
         self.showQuiver = True
         self.makeQuiver()
-
-    def pivwrapper(self,image1,image2,windowsize,frame):
-        overlap = 0.5
-        x, y, u, v = PIV(image1, image2, windowsize, overlap)
-        u, v = localfilt(x, y, u, v, 2)
-        u = naninterp(u)
-        v = naninterp(v)
-        return x, y, u, v, frame
 
     def assignpivresult(self, result):
         x, y, u, v, frame = result
