@@ -195,7 +195,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # self.piv = externalPIV(self.x, self.y, self.u, self.v, self.windowsize, overlap, self.imstack)
         # self.piv.progressstatus.connect(self.updateprogress)
         # self.piv.start()
-        start = time.time()
         for frame in range(self.imstack.nfiles-1):
             worker = Worker(self.pivwrapper, self.imstack.getimage(frame), self.imstack.getimage(frame+1), self.windowsize, frame)
             worker.signals.result.connect(self.assignpivresult)
@@ -209,7 +208,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # self.piv.v[:, :, frame] = v * self.pixelsize / self.timeinterval
             self.threadpool.start(worker)
         self.showQuiver = True
-        print(time.time()-start)
         self.makeQuiver()
 
     def pivwrapper(self,image1,image2,windowsize,frame):
