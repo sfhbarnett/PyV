@@ -1,6 +1,4 @@
 import os
-import traceback
-
 from PyV.PIV import PIV
 from tiffstack import tiffstack
 from piv_filters import localfilt
@@ -36,6 +34,7 @@ class Worker(QtCore.QRunnable):
         self.windowsize = args[1]
         self.kwargs = kwargs
         self.signals = WorkerSignals()
+        self.progress = 0
 
     @QtCore.pyqtSlot()
     def run(self):
@@ -47,7 +46,9 @@ class Worker(QtCore.QRunnable):
 
     @QtCore.pyqtSlot()
     def emitresults(self, results):
+        self.progress+=1
         self.signals.result.emit(results)
+        self.signals.progress.emit(self.progress)
 
 def pivwrapper(image1, image2, windowsize, frame):
     print("working frame " + str(frame))
@@ -196,30 +197,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def runPIV(self):
         overlap = 0.5
+        self.progress = 0
         self.piv.x = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
         self.piv.y = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
         self.piv.u = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
         self.piv.v = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
+        # Create worker thread to perform multiprocessing
         self.threadpool = QtCore.QThreadPool()
         worker = Worker(self.imstack, self.windowsize)
         worker.signals.result.connect(self.assignpivresult)
+        worker.signals.progress.connect(self.updateprogress)
         self.threadpool.start(worker)
-
-        # self.piv = externalPIV(self.x, self.y, self.u, self.v, self.windowsize, overlap, self.imstack)
-        # self.piv.progressstatus.connect(self.updateprogress)
-        # self.piv.start()
-        # for frame in range(self.imstack.nfiles-1):
-        #     worker = Worker(self.pivwrapper, self.imstack.getimage(frame), self.imstack.getimage(frame+1), self.windowsize, frame)
-        #     worker.signals.result.connect(self.assignpivresult)
-        #     # x, y, u, v = PIV(self.imstack.getimage(frame), self.imstack.getimage(frame+1), self.windowsize, overlap)
-        #     # u, v = localfilt(x, y, u, v, 2)
-        #     # u = naninterp(u)
-        #     # v = naninterp(v)
-        #     # self.piv.x[:, :, frame] = x * self.pixelsize
-        #     # self.piv.y[:, :, frame] = y * self.pixelsize
-        #     # self.piv.u[:, :, frame] = u * self.pixelsize / self.timeinterval
-        #     # self.piv.v[:, :, frame] = v * self.pixelsize / self.timeinterval
-        #     self.threadpool.start(worker)
         self.showQuiver = True
         self.makeQuiver()
 
@@ -229,7 +217,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.piv.y[:, :, frame] = y * self.pixelsize
         self.piv.u[:, :, frame] = u * self.pixelsize / self.timeinterval
         self.piv.v[:, :, frame] = v * self.pixelsize / self.timeinterval
-        print("finished frame: " + str(frame))
+        self.progress+=1
 
     def makeQuiver(self):
         if self.quiver is not None:
@@ -359,7 +347,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def importh5py(self):
         filename = QtWidgets.QFileDialog.getOpenFileName(self, 'Open File', directory='~/Documents')
-        with h5py.File(filename[0],'r') as hf:
+        with h5py.File(filename[0], 'r') as hf:
             data = hf.get('data')
             self.piv.x = np.array(data.get('xfield'))
             self.piv.y = np.array(data.get('yfield'))
@@ -374,10 +362,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.piv.nfields = int(np.array(params.get('nfields')))
             self.showQuiver = True
             self.statusbar.showMessage("PIV data imported from: " + filename[0], 2000)
+            self.pixelsizeinput.setText(str(self.piv.pixelsize))
+            self.windowsizeinput.setText(str(self.piv.windowsize))
+            self.timeintervalinput.setText(str(self.piv.timeinterval))
 
 
     def updateprogress(self, value):
-        self.progressbar.setValue(100 / self.imstack.nfiles * value)
+        self.progressbar.setValue((value / (self.imstack.nfiles-1))*100)
 
     def savequiver(self):
         """
@@ -432,7 +423,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             theta = resize(np.rad2deg(phi), (self.piv.u.shape[0]*self.windowsize//2,
                                              self.piv.u.shape[1]*self.windowsize//2),
                            order=0, preserve_range=True)
-            self.imagehandle.set_data(theta.T+180)
+            self.imagehandle.set_data(np.flipud(theta.T)+180)
             self.imagehandle.set_clim(0, 360)
             self.extent = [self.windowsize/4, self.imstack.width-self.windowsize/4,
                            self.windowsize/4, self.imstack.width-self.windowsize/4]
