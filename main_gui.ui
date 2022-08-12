@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1405</width>
-    <height>847</height>
+    <width>1256</width>
+    <height>859</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -69,15 +69,22 @@
                <rect>
                 <x>20</x>
                 <y>20</y>
-                <width>200</width>
-                <height>311</height>
+                <width>208</width>
+                <height>171</height>
                </rect>
               </property>
               <layout class="QFormLayout" name="formLayout">
+               <item row="1" column="0">
+                <widget class="QLabel" name="label">
+                 <property name="text">
+                  <string>Window Size</string>
+                 </property>
+                </widget>
+               </item>
                <item row="1" column="1">
                 <widget class="QLineEdit" name="windowsizeinput">
                  <property name="toolTip">
-                  <string>PIV window size (pixels)</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;PIV window size (pixels), best pracitice is multiples of 2.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="text">
                   <string>32</string>
@@ -94,7 +101,7 @@
                <item row="2" column="1">
                 <widget class="QLineEdit" name="maxspeedinput">
                  <property name="toolTip">
-                  <string>Quiver color will be clipped to this value</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Quiver color will be clipped to this value&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="text">
                   <string>100</string>
@@ -111,47 +118,7 @@
                <item row="3" column="1">
                 <widget class="QLineEdit" name="pixelsizeinput">
                  <property name="toolTip">
-                  <string>Pixel size of the data, PIV results will use this as the scale</string>
-                 </property>
-                 <property name="text">
-                  <string>1</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="0">
-                <widget class="QLabel" name="label">
-                 <property name="text">
-                  <string>Window Size</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="6" column="0">
-                <widget class="QLabel" name="label_4">
-                 <property name="text">
-                  <string>Autocontrast</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="6" column="1">
-                <widget class="QCheckBox" name="autocontrast">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="text">
-                  <string/>
-                 </property>
-                 <property name="checked">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-               <item row="4" column="1">
-                <widget class="QLineEdit" name="arrowscaleinput">
-                 <property name="toolTip">
-                  <string>Set arrow scaling for visualisation</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Pixel size of the data, PIV results will use this as the scale e.g micons/hour&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="text">
                   <string>1</string>
@@ -165,6 +132,16 @@
                  </property>
                 </widget>
                </item>
+               <item row="4" column="1">
+                <widget class="QLineEdit" name="arrowscaleinput">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set arrow scaling for visualisation, doesn't affect data&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="text">
+                  <string>1</string>
+                 </property>
+                </widget>
+               </item>
                <item row="5" column="0">
                 <widget class="QLabel" name="label_6">
                  <property name="text">
@@ -174,43 +151,13 @@
                </item>
                <item row="5" column="1">
                 <widget class="QLineEdit" name="timeintervalinput">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Time scale of the data for scaling. e.g microns/hour&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
                  <property name="text">
                   <string>1</string>
                  </property>
                 </widget>
-               </item>
-               <item row="7" column="0">
-                <widget class="QLabel" name="label_8">
-                 <property name="text">
-                  <string>Show Image</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="7" column="1">
-                <widget class="QCheckBox" name="showimagecheck">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="text">
-                  <string/>
-                 </property>
-                 <property name="checked">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-               <item row="8" column="0">
-                <widget class="QLabel" name="label_7">
-                 <property name="text">
-                  <string>Field Colormap</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="8" column="1">
-                <widget class="QComboBox" name="fieldcolormapinput"/>
                </item>
               </layout>
              </widget>
@@ -218,7 +165,7 @@
               <property name="geometry">
                <rect>
                 <x>60</x>
-                <y>450</y>
+                <y>200</y>
                 <width>113</width>
                 <height>32</height>
                </rect>
@@ -256,6 +203,9 @@
                 <height>0</height>
                </size>
               </property>
+              <property name="toolTip">
+               <string>Calculate root mean square velocity</string>
+              </property>
               <property name="text">
                <string>Vrms</string>
               </property>
@@ -274,6 +224,9 @@
                 <width>104</width>
                 <height>16777215</height>
                </size>
+              </property>
+              <property name="toolTip">
+               <string>Calculate the linear order</string>
               </property>
               <property name="text">
                <string>Linear Order</string>
@@ -300,6 +253,9 @@
                 <height>16777215</height>
                </size>
               </property>
+              <property name="toolTip">
+               <string>Calculate and show the orientation map</string>
+              </property>
               <property name="text">
                <string>Orientation</string>
               </property>
@@ -313,108 +269,235 @@
                 <height>32</height>
                </rect>
               </property>
+              <property name="toolTip">
+               <string>Calculate and show the alignment map</string>
+              </property>
               <property name="text">
                <string>Alignment</string>
               </property>
              </widget>
-             <widget class="QPushButton" name="linearisebutton">
+             <widget class="QGroupBox" name="groupBox">
               <property name="geometry">
                <rect>
-                <x>20</x>
-                <y>270</y>
-                <width>131</width>
-                <height>32</height>
+                <x>10</x>
+                <y>290</y>
+                <width>221</width>
+                <height>141</height>
                </rect>
               </property>
-              <property name="text">
-               <string>Linearise field</string>
+              <property name="title">
+               <string>Visualisation</string>
               </property>
+              <widget class="QLabel" name="label_4">
+               <property name="geometry">
+                <rect>
+                 <x>10</x>
+                 <y>30</y>
+                 <width>79</width>
+                 <height>16</height>
+                </rect>
+               </property>
+               <property name="text">
+                <string>Autocontrast</string>
+               </property>
+              </widget>
+              <widget class="QCheckBox" name="autocontrast">
+               <property name="geometry">
+                <rect>
+                 <x>100</x>
+                 <y>30</y>
+                 <width>19</width>
+                 <height>18</height>
+                </rect>
+               </property>
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="toolTip">
+                <string>Autocontrasting for the image</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+              <widget class="QCheckBox" name="showquivercheck">
+               <property name="geometry">
+                <rect>
+                 <x>10</x>
+                 <y>60</y>
+                 <width>65</width>
+                 <height>20</height>
+                </rect>
+               </property>
+               <property name="toolTip">
+                <string>Show the PIV map</string>
+               </property>
+               <property name="text">
+                <string>PIV</string>
+               </property>
+              </widget>
+              <widget class="QCheckBox" name="showimagecheck">
+               <property name="geometry">
+                <rect>
+                 <x>100</x>
+                 <y>60</y>
+                 <width>62</width>
+                 <height>20</height>
+                </rect>
+               </property>
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="toolTip">
+                <string>Show the image</string>
+               </property>
+               <property name="text">
+                <string>Image</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+              <widget class="QLabel" name="label_7">
+               <property name="geometry">
+                <rect>
+                 <x>10</x>
+                 <y>90</y>
+                 <width>92</width>
+                 <height>20</height>
+                </rect>
+               </property>
+               <property name="text">
+                <string>Field Colormap</string>
+               </property>
+              </widget>
+              <widget class="QComboBox" name="fieldcolormapinput">
+               <property name="geometry">
+                <rect>
+                 <x>110</x>
+                 <y>90</y>
+                 <width>104</width>
+                 <height>26</height>
+                </rect>
+               </property>
+               <property name="toolTip">
+                <string>Change the PIV colormap</string>
+               </property>
+              </widget>
              </widget>
-             <widget class="QCheckBox" name="showlinearfield">
+             <widget class="QGroupBox" name="groupBox_2">
               <property name="geometry">
                <rect>
-                <x>30</x>
-                <y>300</y>
-                <width>101</width>
-                <height>20</height>
+                <x>10</x>
+                <y>90</y>
+                <width>221</width>
+                <height>191</height>
                </rect>
               </property>
-              <property name="text">
-               <string>Linear Field</string>
+              <property name="title">
+               <string>Rotation</string>
               </property>
+              <widget class="QLineEdit" name="centerXinput">
+               <property name="geometry">
+                <rect>
+                 <x>10</x>
+                 <y>30</y>
+                 <width>41</width>
+                 <height>21</height>
+                </rect>
+               </property>
+              </widget>
+              <widget class="QLabel" name="label_9">
+               <property name="geometry">
+                <rect>
+                 <x>60</x>
+                 <y>30</y>
+                 <width>60</width>
+                 <height>16</height>
+                </rect>
+               </property>
+               <property name="text">
+                <string>center X</string>
+               </property>
+              </widget>
+              <widget class="QLineEdit" name="centerYinput">
+               <property name="geometry">
+                <rect>
+                 <x>10</x>
+                 <y>60</y>
+                 <width>41</width>
+                 <height>21</height>
+                </rect>
+               </property>
+              </widget>
+              <widget class="QLabel" name="label_10">
+               <property name="geometry">
+                <rect>
+                 <x>60</x>
+                 <y>60</y>
+                 <width>60</width>
+                 <height>16</height>
+                </rect>
+               </property>
+               <property name="text">
+                <string>center Y</string>
+               </property>
+              </widget>
+              <widget class="QPushButton" name="linearisebutton">
+               <property name="geometry">
+                <rect>
+                 <x>10</x>
+                 <y>90</y>
+                 <width>131</width>
+                 <height>32</height>
+                </rect>
+               </property>
+               <property name="text">
+                <string>Linearise field</string>
+               </property>
+              </widget>
+              <widget class="QCheckBox" name="showlinearfield">
+               <property name="geometry">
+                <rect>
+                 <x>10</x>
+                 <y>120</y>
+                 <width>101</width>
+                 <height>20</height>
+                </rect>
+               </property>
+               <property name="text">
+                <string>Linear Field</string>
+               </property>
+              </widget>
+              <widget class="QPushButton" name="rotationalorderbutton">
+               <property name="geometry">
+                <rect>
+                 <x>10</x>
+                 <y>140</y>
+                 <width>131</width>
+                 <height>32</height>
+                </rect>
+               </property>
+               <property name="text">
+                <string>Rotational Order</string>
+               </property>
+              </widget>
              </widget>
-             <widget class="Line" name="line">
-              <property name="geometry">
-               <rect>
-                <x>40</x>
-                <y>180</y>
-                <width>171</width>
-                <height>16</height>
-               </rect>
-              </property>
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-             </widget>
-             <widget class="QPushButton" name="rotationalorderbutton">
-              <property name="geometry">
-               <rect>
-                <x>20</x>
-                <y>320</y>
-                <width>131</width>
-                <height>32</height>
-               </rect>
-              </property>
-              <property name="text">
-               <string>Rotational Order</string>
-              </property>
-             </widget>
-             <widget class="QLineEdit" name="centerXinput">
-              <property name="geometry">
-               <rect>
-                <x>20</x>
-                <y>200</y>
-                <width>41</width>
-                <height>21</height>
-               </rect>
-              </property>
-             </widget>
-             <widget class="QLineEdit" name="centerYinput">
-              <property name="geometry">
-               <rect>
-                <x>20</x>
-                <y>230</y>
-                <width>41</width>
-                <height>21</height>
-               </rect>
-              </property>
-             </widget>
-             <widget class="QLabel" name="label_9">
-              <property name="geometry">
-               <rect>
-                <x>70</x>
-                <y>200</y>
-                <width>60</width>
-                <height>16</height>
-               </rect>
-              </property>
-              <property name="text">
-               <string>center X</string>
-              </property>
-             </widget>
-             <widget class="QLabel" name="label_10">
-              <property name="geometry">
-               <rect>
-                <x>70</x>
-                <y>230</y>
-                <width>60</width>
-                <height>16</height>
-               </rect>
-              </property>
-              <property name="text">
-               <string>center Y</string>
-              </property>
-             </widget>
+             <zorder>groupBox_2</zorder>
+             <zorder>vrmsbutton</zorder>
+             <zorder>linearorderbutton</zorder>
+             <zorder>orientationbutton</zorder>
+             <zorder>alignmentbutton</zorder>
+             <zorder>groupBox</zorder>
             </widget>
            </widget>
           </item>
@@ -425,7 +508,7 @@
             </property>
             <property name="minimumSize">
              <size>
-              <width>80</width>
+              <width>20</width>
               <height>0</height>
              </size>
             </property>
@@ -433,22 +516,6 @@
              <enum>Qt::Vertical</enum>
             </property>
            </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Maximum</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>10</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
           </item>
           <item>
            <widget class="MplWidget" name="mplwidget" native="true">
@@ -466,6 +533,10 @@
             </property>
            </widget>
           </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_3">
           <item>
            <widget class="QTableWidget" name="table">
             <property name="sizePolicy">
@@ -481,6 +552,27 @@
              </size>
             </property>
            </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <item>
+             <widget class="QPushButton" name="cleartablebutton">
+              <property name="toolTip">
+               <string>Clear table</string>
+              </property>
+              <property name="text">
+               <string>Clear</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="exporttablebutton">
+              <property name="text">
+               <string>Export</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
          </layout>
         </item>
@@ -522,7 +614,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1405</width>
+     <width>1256</width>
      <height>24</height>
     </rect>
    </property>

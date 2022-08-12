@@ -51,7 +51,6 @@ class Worker(QtCore.QRunnable):
         self.signals.progress.emit(self.progress)
 
 def pivwrapper(image1, image2, windowsize, frame):
-    print("working frame " + str(frame))
     overlap = 0.5
     x, y, u, v = PIV(image1, image2, windowsize, overlap)
     u, v = localfilt(x, y, u, v, 2)
@@ -72,13 +71,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.maxcontrast = 64000
         self.quiver = None
         self.imagehandle = plt.imshow(np.array([[]]))
+        self.imageitem = None
         self.imagehandle.set_cmap('gray')
         self.extent = [0, 1000, 0, 1000]
         self.imstack = None
         self.showQuiver = False
         self.mpl_toolbar = NavigationToolbar2QT(self.mplwidget.canvas, None)
         self.connectsignalsslots()
-        self.stackslider.setRange(0, 10)
+        self.stackslidermax = 0
+        self.stackslider.setRange(0, self.stackslidermax)
         self.currentimage = 0
         self.contrastslider.setRange(0, 200)
         self.contrastslider.setHandleLabelPosition(QLabeledDoubleRangeSlider.LabelPosition.LabelsBelow)
@@ -180,11 +181,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.contrastslider.setRange(0, self.imstack.maximum * 1.5)
             self.contrastslider.setValue((self.imstack.minimum, self.imstack.maximum))
             self.stackpos.setText(str(self.currentimage + 1))
+            self.stackslidermax = self.imstack.nfiles
+            self.imageitem = 1
 
     def move_through_stack(self, value):
         """ Updates the current image in the viewport"""
         self.currentimage = value
-        self.showImage()
+        self.stackpos.setText(str(self.currentimage + 1))
+        if self.imstack is not None:
+            self.showImage()
         if self.quiver is not None:
             self.makeQuiver()
 
@@ -251,6 +256,23 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.imagehandle.set_extent(self.extent)
         self.mplwidget.canvas.fig.canvas.draw()
 
+    def showImage(self):
+        if self.imstack is not None and self.showimagecheck.isChecked():
+            self.imagehandle.set_data(self.imstack.getimage(self.currentimage))
+            self.imagehandle.set_extent(self.extent)
+            # Check and update contrast
+            if not self.autocontrast.isChecked():
+                self.imagehandle.set_clim([self.mincontrast, self.maxcontrast])
+            else:
+                self.contrastslider.setRange(0, self.imstack.maximum*1.5)
+                self.contrastslider.setValue((self.imstack.minimum, self.imstack.maximum))
+            self.imageitem = 1
+        else:
+            self.imagehandle.set_data(np.array([[], []]))
+            self.imageitem = None
+        self.imagehandle.set_cmap('gray')
+        self.mplwidget.canvas.figure.canvas.draw_idle()
+
     def updatedisplayspeed(self):
         self.maxdispspeed = float(self.maxspeedinput.text())
         self.makeQuiver()
@@ -258,13 +280,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def setPixelSize(self):
         value = float(self.pixelsizeinput.text())
-        self.piv.u /= self.pixelsize*self.windowsize
-        self.piv.v /= self.pixelsize*self.windowsize
-        self.pixelsize = value
-        self.piv.u *= self.pixelsize*self.windowsize
-        self.piv.v *= self.pixelsize*self.windowsize
-        self.makeQuiver()
-        self.setFocus()
+        if value != 0:
+            self.piv.u /= self.pixelsize*self.windowsize
+            self.piv.v /= self.pixelsize*self.windowsize
+            self.pixelsize = value
+            self.piv.u *= self.pixelsize*self.windowsize
+            self.piv.v *= self.pixelsize*self.windowsize
+            self.makeQuiver()
+            self.setFocus()
+        else:
+            self.pixelsizeinput.setText(str(self.pixelsize))
 
     def setCenterX(self):
         value = float(self.centerXinput.text())
@@ -322,6 +347,42 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             np.savetxt(path+'/'+str(frame)+'.txt', array, delimiter=',', fmt=fmt)
         self.statusbar.showMessage("PIV data exported to: "+path, 2000)
 
+    def importfields(self):
+        """ import files that represents fields (Mx4) where M is the number of vectors. Col 0 is x, Col 1 is y,
+        Col 2 is u, Col3 is v"""
+        path = '/Users/sbarnett/PycharmProjects/PyV/exportloc/'
+        files = os.listdir(path)
+        files.remove('.DS_Store')
+        counter = 0
+        self.piv.x = np.zeros((63, 63, 9))
+        self.piv.y = np.zeros((63, 63, 9))
+        self.piv.u = np.zeros((63, 63, 9))
+        self.piv.v = np.zeros((63, 63, 9))
+        files = self.natsort(files)
+        for file in files:
+            if file[-4:] == '.txt':
+                array = np.loadtxt(os.path.join(path, file), delimiter=',')
+                self.piv.x[:, :, counter] = np.reshape(array[:, 0], [int(np.max(array[:, 0]/(array[0, 0]+1)))+1,
+                                                                     int(np.max(array[:, 1]/(array[0, 1]+1)))+1])
+                self.piv.y[:, :, counter] = np.reshape(array[:, 1], [int(np.max(array[:, 0]/(array[0, 0]+1)))+1,
+                                                                     int(np.max(array[:, 1]/(array[0, 1]+1)))+1])
+                self.piv.u[:, :, counter] = np.reshape(array[:, 2], [int(np.max(array[:, 0]/(array[0, 0]+1)))+1,
+                                                                     int(np.max(array[:, 1]/(array[0, 1]+1)))+1])
+                self.piv.v[:, :, counter] = np.reshape(array[:, 3], [int(np.max(array[:, 0]/(array[0, 0]+1)))+1,
+                                                                     int(np.max(array[:, 1]/(array[0, 1]+1)))+1])
+                counter += 1
+        self.piv.width = int(np.max(array[:, 0] / (array[0, 0] + 1))) + 1
+        self.piv.height = int(np.max(array[:, 1] / (array[0, 1] + 1))) + 1
+        self.piv.nfields = counter
+        self.showQuiver = True
+        self.makeQuiver()
+        self.statusbar.showMessage("PIV data imported from: "+path, 2000)
+        if self.piv.nfields > self.stackslidermax:
+            self.stackslidermax = self.piv.nfields
+            self.stackslider.setRange(0, self.stackslidermax)
+            self.stackslider.setValue(0)
+            self.stackpos.setText(str(self.currentimage+1))
+
     def exporth5py(self):
         """
         Exports fields and relevent information to hdf5
@@ -365,6 +426,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.pixelsizeinput.setText(str(self.piv.pixelsize))
             self.windowsizeinput.setText(str(self.piv.windowsize))
             self.timeintervalinput.setText(str(self.piv.timeinterval))
+            if self.piv.nfields > self.stackslidermax:
+                self.stackslidermax = self.piv.nfields
 
 
     def updateprogress(self, value):
@@ -375,11 +438,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         Saves the current image on the screen
         :return:
         """
-        extent = self.mplwidget.canvas.axes.get_window_extent().transformed(self.mplwidget.canvas.fig.dpi_scale_trans.inverted())
-        for frame in range(1, self.imstack.nfiles):
-            self.move_through_stack(frame)
-            self.mplwidget.canvas.fig.savefig('/Users/sbarnett/PycharmProjects/PyV/exportloc/'+str(frame)+'.png',
-                                              bbox_inches=extent)
+        filename = QtWidgets.QFileDialog.getSaveFileName(self, 'Save File', directory='~/Documents')
+        if filename[0] != "":
+            extent = self.mplwidget.canvas.axes.get_window_extent().transformed(self.mplwidget.canvas.fig.dpi_scale_trans.inverted())
+            for frame in range(1, self.imstack.nfiles):
+                self.move_through_stack(frame)
+                self.mplwidget.canvas.fig.savefig(filename[0]+'_'+str(frame)+'.tif',
+                                                  bbox_inches=extent)
 
     def alignment(self):
         """
@@ -431,37 +496,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.imagehandle.set_cmap('hsv')
             self.mplwidget.canvas.fig.canvas.draw()
 
-    def importfields(self):
-        """ import files that represents fields (Mx4) where M is the number of vectors. Col 0 is x, Col 1 is y,
-        Col 2 is u, Col3 is v"""
-        path = '/Users/sbarnett/PycharmProjects/PyV/exportloc/'
-        files = os.listdir(path)
-        files.remove('.DS_Store')
-        counter = 0
-        self.piv.x = np.zeros((63, 63, 9))
-        self.piv.y = np.zeros((63, 63, 9))
-        self.piv.u = np.zeros((63, 63, 9))
-        self.piv.v = np.zeros((63, 63, 9))
-        files = self.natsort(files)
-        for file in files:
-            if file[-4:] == '.txt':
-                array = np.loadtxt(os.path.join(path, file), delimiter=',')
-                self.piv.x[:, :, counter] = np.reshape(array[:, 0], [int(np.max(array[:, 0]/(array[0, 0]+1)))+1,
-                                                                     int(np.max(array[:, 1]/(array[0, 1]+1)))+1])
-                self.piv.y[:, :, counter] = np.reshape(array[:, 1], [int(np.max(array[:, 0]/(array[0, 0]+1)))+1,
-                                                                     int(np.max(array[:, 1]/(array[0, 1]+1)))+1])
-                self.piv.u[:, :, counter] = np.reshape(array[:, 2], [int(np.max(array[:, 0]/(array[0, 0]+1)))+1,
-                                                                     int(np.max(array[:, 1]/(array[0, 1]+1)))+1])
-                self.piv.v[:, :, counter] = np.reshape(array[:, 3], [int(np.max(array[:, 0]/(array[0, 0]+1)))+1,
-                                                                     int(np.max(array[:, 1]/(array[0, 1]+1)))+1])
-                counter += 1
-        self.piv.width = int(np.max(array[:, 0] / (array[0, 0] + 1))) + 1
-        self.piv.height = int(np.max(array[:, 1] / (array[0, 1] + 1))) + 1
-        self.piv.nfields = counter
-        self.showQuiver = True
-        self.makeQuiver()
-        self.statusbar.showMessage("PIV data imported from: "+path, 2000)
-
     def calculatevrms(self):
         """Calculate root mean square velocity of the vectorfield"""
         self.vrms = []
@@ -476,22 +510,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def lineariseField(self):
         self.piv.lineariseField()
         self.makeQuiver()
-
-    def showImage(self):
-        if self.imstack is not None and self.showimagecheck.isChecked():
-            self.stackpos.setText(str(self.currentimage+1))
-            self.imagehandle.set_data(self.imstack.getimage(self.currentimage))
-            self.imagehandle.set_extent(self.extent)
-            # Check and update contrast
-            if not self.autocontrast.isChecked():
-                self.imagehandle.set_clim([self.mincontrast, self.maxcontrast])
-            else:
-                self.contrastslider.setRange(0, self.imstack.maximum*1.5)
-                self.contrastslider.setValue((self.imstack.minimum, self.imstack.maximum))
-        else:
-            self.imagehandle.set_data(np.array([[], []]))
-        self.imagehandle.set_cmap('gray')
-        self.mplwidget.canvas.figure.canvas.draw_idle()
 
     def showlinear(self):
         self.makeQuiver()
@@ -517,12 +535,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def keyPressEvent(self, event):
         # Left and right for moving through stack
-        if self.imagehandle is not None or self.quiver is not None:
+        if self.imageitem is not None or self.showQuiver is not False:
             if event.key() == QtCore.Qt.Key_S or event.key() == QtCore.Qt.Key_Right:
-                if 0 <= self.stackslider.value() < self.imstack.nfiles-1:
+                if 0 <= self.stackslider.value() < self.stackslidermax:
                     self.stackslider.setValue(self.stackslider.value()+1)
             elif event.key() == QtCore.Qt.Key_A or event.key() == QtCore.Qt.Key_Left:
-                if 0 < self.stackslider.value() < self.imstack.nfiles:
+                if 0 < self.stackslider.value():
                     self.stackslider.setValue(self.stackslider.value()-1)
         event.accept()
 

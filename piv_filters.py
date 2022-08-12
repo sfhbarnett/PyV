@@ -10,6 +10,7 @@ def localfilt(x, y, u, v, threshold):
     nu[int(np.floor(m/2)):-int(np.floor(m/2)), int(np.floor(m/2)):-int(np.floor(m/2))] = u
     nv[int(np.floor(m/2)):-int(np.floor(m/2)), int(np.floor(m/2)):-int(np.floor(m/2))] = v
 
+    # u and v are filtered together as complex numbers
     U2 = nu + nv * 1j
     histostd = np.zeros(nu.shape, dtype='complex')
     histo = np.zeros(nu.shape, dtype='complex')
