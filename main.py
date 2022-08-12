@@ -166,6 +166,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.showimagecheck.stateChanged.connect(self.showImage)
         self.showlinearfield.stateChanged.connect(self.showlinear)
         self.cleartablebutton.clicked.connect(self.cleartable)
+        self.exporttablebutton.clicked.connect(self.exporttable)
 
     def get_file(self):
         """"
@@ -212,6 +213,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.piv.y = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
         self.piv.u = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
         self.piv.v = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
+        self.piv.nfields = self.imstack.nfiles-1
+        self.piv.width = int(self.imstack.width // (self.windowsize*overlap)-1)
+        self.piv.height = int(self.imstack.height // (self.windowsize*overlap)-1)
         # Create worker thread to perform multiprocessing
         self.starttime = time.time()
         self.threadpool = QtCore.QThreadPool()
@@ -547,6 +551,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def cleartable(self):
         self.tableview.clearTable()
 
+    def exporttable(self):
+        headers, data = self.tableview.getData()
+        headerstr = ", ".join(headers)
+        filename = QtWidgets.QFileDialog.getSaveFileName(self, 'Save File', directory='~/Documents')
+        np.savetxt(filename[0] + '.txt', np.array(data,dtype=float), delimiter=',', header=headerstr, comments='')
+
+
+
     def keyPressEvent(self, event):
         # Left and right for moving through stack
         if self.imageitem is not None or self.showQuiver is not False:
@@ -604,6 +616,15 @@ class TableView(QtWidgets.QTableWidget):
         self.tablewidget.setColumnCount(0)
         self.headerlabels = []
         self.tablewidget.setHorizontalHeaderLabels(self.headerlabels)
+
+    def getData(self):
+        data = []
+        for row in range(self.tablewidget.rowCount()):
+            rowdata = []
+            for col in range(self.tablewidget.columnCount()):
+                rowdata.append(self.tablewidget.item(row, col).text())
+            data.append(rowdata)
+        return self.headerlabels, data
 
 
 
