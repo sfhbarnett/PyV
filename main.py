@@ -15,6 +15,7 @@ import re
 import h5py
 import sys
 import numpy as np
+import time
 
 # pyuic6 - o main_gui.py - x main_gui.ui
 
@@ -49,6 +50,8 @@ class Worker(QtCore.QRunnable):
         self.progress+=1
         self.signals.result.emit(results)
         self.signals.progress.emit(self.progress)
+        if self.progress == self.imstack.nfiles-1:
+            self.signals.finished.emit()
 
 def pivwrapper(image1, image2, windowsize, frame):
     overlap = 0.5
@@ -77,6 +80,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.imstack = None
         self.showQuiver = False
         self.mpl_toolbar = NavigationToolbar2QT(self.mplwidget.canvas, None)
+        cid = self.mplwidget.canvas.fig.canvas.mpl_connect('button_press_event', self.onclick)
         self.connectsignalsslots()
         self.stackslidermax = 0
         self.stackslider.setRange(0, self.stackslidermax)
@@ -161,6 +165,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.fieldcolormapinput.currentIndexChanged.connect(self.changecmap)
         self.showimagecheck.stateChanged.connect(self.showImage)
         self.showlinearfield.stateChanged.connect(self.showlinear)
+        self.cleartablebutton.clicked.connect(self.cleartable)
 
     def get_file(self):
         """"
@@ -208,10 +213,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.piv.u = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
         self.piv.v = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
         # Create worker thread to perform multiprocessing
+        self.starttime = time.time()
         self.threadpool = QtCore.QThreadPool()
         worker = Worker(self.imstack, self.windowsize)
         worker.signals.result.connect(self.assignpivresult)
         worker.signals.progress.connect(self.updateprogress)
+        worker.signals.finished.connect(self.finishedpiv)
         self.threadpool.start(worker)
         self.showQuiver = True
         self.makeQuiver()
@@ -222,7 +229,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.piv.y[:, :, frame] = y * self.pixelsize
         self.piv.u[:, :, frame] = u * self.pixelsize / self.timeinterval
         self.piv.v[:, :, frame] = v * self.pixelsize / self.timeinterval
-        self.progress+=1
+        self.progress += 1
+
+    def finishedpiv(self):
+        self.statusbar.showMessage(f"PIV run in:  {round(time.time()-self.starttime,2)} seconds", 4000)
+
+    def updateprogress(self, value):
+        self.progressbar.setValue((value / (self.imstack.nfiles-1))*100)
 
     def makeQuiver(self):
         if self.quiver is not None:
@@ -428,10 +441,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.timeintervalinput.setText(str(self.piv.timeinterval))
             if self.piv.nfields > self.stackslidermax:
                 self.stackslidermax = self.piv.nfields
-
-
-    def updateprogress(self, value):
-        self.progressbar.setValue((value / (self.imstack.nfiles-1))*100)
+                self.statusbar.showMessage("PIV data imported from : " + filename[0], 2000)
 
     def savequiver(self):
         """
@@ -445,6 +455,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.move_through_stack(frame)
                 self.mplwidget.canvas.fig.savefig(filename[0]+'_'+str(frame)+'.tif',
                                                   bbox_inches=extent)
+            self.statusbar.showMessage("PIV images saved to: " + filename[0], 2000)
 
     def alignment(self):
         """
@@ -533,6 +544,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
         return sorted(tosort, key=alphanum_key)
 
+    def cleartable(self):
+        self.tableview.clearTable()
+
     def keyPressEvent(self, event):
         # Left and right for moving through stack
         if self.imageitem is not None or self.showQuiver is not False:
@@ -544,6 +558,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     self.stackslider.setValue(self.stackslider.value()-1)
         event.accept()
 
+    def onclick(self,event):
+        print(event)
+
 
 class TableView(QtWidgets.QTableWidget):
     def __init__(self, tablewidget, *args):
@@ -554,8 +571,8 @@ class TableView(QtWidgets.QTableWidget):
         self.setData()
         
     def setData(self):
-        self.headerlabels = ['#']
-        self.tablewidget.setColumnCount(1)
+        self.headerlabels = []
+        self.tablewidget.setColumnCount(0)
         self.tablewidget.setHorizontalHeaderLabels(self.headerlabels)
         for m, item in enumerate(self.data):
             row = self.tablewidget.rowCount()
@@ -581,6 +598,13 @@ class TableView(QtWidgets.QTableWidget):
             cell = QtWidgets.QTableWidgetItem(str(round(el, 3)))
             self.tablewidget.setItem(row, col, cell)
             row += 1
+
+    def clearTable(self):
+        self.tablewidget.setRowCount(0)
+        self.tablewidget.setColumnCount(0)
+        self.headerlabels = []
+        self.tablewidget.setHorizontalHeaderLabels(self.headerlabels)
+
 
 
 class Pivdata:
