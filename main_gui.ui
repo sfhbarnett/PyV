@@ -58,7 +58,7 @@
              </size>
             </property>
             <property name="currentIndex">
-             <number>0</number>
+             <number>1</number>
             </property>
             <widget class="QWidget" name="tab">
              <attribute name="title">
@@ -520,17 +520,20 @@
               <widget class="QLineEdit" name="scalebarunitsinput">
                <property name="geometry">
                 <rect>
-                 <x>50</x>
+                 <x>160</x>
                  <y>20</y>
                  <width>51</width>
                  <height>21</height>
                 </rect>
                </property>
+               <property name="text">
+                <string>um</string>
+               </property>
               </widget>
               <widget class="QLabel" name="label_8">
                <property name="geometry">
                 <rect>
-                 <x>10</x>
+                 <x>120</x>
                  <y>20</y>
                  <width>60</width>
                  <height>16</height>
@@ -557,6 +560,32 @@
                </property>
                <property name="tristate">
                 <bool>false</bool>
+               </property>
+              </widget>
+              <widget class="QLabel" name="label_11">
+               <property name="geometry">
+                <rect>
+                 <x>10</x>
+                 <y>20</y>
+                 <width>60</width>
+                 <height>16</height>
+                </rect>
+               </property>
+               <property name="text">
+                <string>Length</string>
+               </property>
+              </widget>
+              <widget class="QLineEdit" name="scalebarlengthinput">
+               <property name="geometry">
+                <rect>
+                 <x>60</x>
+                 <y>20</y>
+                 <width>51</width>
+                 <height>21</height>
+                </rect>
+               </property>
+               <property name="text">
+                <string>10</string>
                </property>
               </widget>
              </widget>

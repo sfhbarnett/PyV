@@ -4,6 +4,7 @@ from tiffstack import tiffstack
 from piv_filters import localfilt
 from naninterp import naninterp
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from PyQt6 import QtCore, QtWidgets
 import matplotlib.pyplot as plt
 from PyQt6.QtGui import QIcon, QIntValidator, QDoubleValidator
@@ -170,6 +171,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.showlinearfield.stateChanged.connect(self.showlinear)
         self.cleartablebutton.clicked.connect(self.cleartable)
         self.exporttablebutton.clicked.connect(self.exporttable)
+        self.scalebarcheck.stateChanged.connect(self.addScalebar)
 
     def get_file(self):
         """"
@@ -399,6 +401,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 counter += 1
         self.piv.width = int(np.max(array[:, 0] / (array[0, 0] + 1))) + 1
         self.piv.height = int(np.max(array[:, 1] / (array[0, 1] + 1))) + 1
+        self.centerXinput.setText(str(self.piv.width/2))
+        self.centerYinput.setText(str(self.piv.height/2))
         self.piv.nfields = counter
         self.showQuiver = True
         self.makeQuiver()
@@ -447,6 +451,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.piv.width = int(np.array(params.get('width')))
             self.piv.height = int(np.array(params.get('height')))
             self.piv.nfields = int(np.array(params.get('nfields')))
+            self.centerXinput.setText(str(self.piv.width / 2))
+            self.centerYinput.setText(str(self.piv.height / 2))
             self.showQuiver = True
             self.statusbar.showMessage("PIV data imported from: " + filename[0], 2000)
             self.pixelsizeinput.setText(str(self.piv.pixelsize))
@@ -584,6 +590,19 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def mousemove(self, event):
         x, y = event.x, event.y
         self.toolbarcoordlabel.setText(str(x)+" "+str(y))
+
+    def addScalebar(self):
+        if self.scalebarcheck.isChecked() == True:
+            unit = self.scalebarunitsinput.text()
+            length = float(self.scalebarlengthinput.text())/self.pixelsize
+            self.scalebar = AnchoredSizeBar(self.mplwidget.canvas.axes.transData, size=length,
+                                            label=self.scalebarlengthinput.text()+" " +unit, loc="lower right",
+                                            color='white', frameon=False,size_vertical=10)
+            self.mplwidget.canvas.axes.add_artist(self.scalebar)
+        if self.scalebarcheck.isChecked() == False:
+            self.scalebar.remove()
+        self.mplwidget.canvas.fig.canvas.draw()
+
 
 
 class TableView(QtWidgets.QTableWidget):
