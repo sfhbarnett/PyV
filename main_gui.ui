@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1256</width>
-    <height>859</height>
+    <height>847</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -58,7 +58,7 @@
              </size>
             </property>
             <property name="currentIndex">
-             <number>1</number>
+             <number>0</number>
             </property>
             <widget class="QWidget" name="tab">
              <attribute name="title">
@@ -70,7 +70,7 @@
                 <x>20</x>
                 <y>20</y>
                 <width>208</width>
-                <height>171</height>
+                <height>211</height>
                </rect>
               </property>
               <layout class="QFormLayout" name="formLayout">
@@ -165,7 +165,7 @@
               <property name="geometry">
                <rect>
                 <x>60</x>
-                <y>200</y>
+                <y>250</y>
                 <width>113</width>
                 <height>32</height>
                </rect>
@@ -175,6 +175,19 @@
               </property>
               <property name="text">
                <string>Run PIV</string>
+              </property>
+             </widget>
+             <widget class="QPushButton" name="connectedcomponentsbutton">
+              <property name="geometry">
+               <rect>
+                <x>30</x>
+                <y>290</y>
+                <width>181</width>
+                <height>32</height>
+               </rect>
+              </property>
+              <property name="text">
+               <string>Connected Components</string>
               </property>
              </widget>
             </widget>
@@ -492,12 +505,68 @@
                </property>
               </widget>
              </widget>
+             <widget class="QGroupBox" name="groupBox_3">
+              <property name="geometry">
+               <rect>
+                <x>10</x>
+                <y>440</y>
+                <width>221</width>
+                <height>80</height>
+               </rect>
+              </property>
+              <property name="title">
+               <string>Scale Bar</string>
+              </property>
+              <widget class="QLineEdit" name="scalebarunitsinput">
+               <property name="geometry">
+                <rect>
+                 <x>50</x>
+                 <y>20</y>
+                 <width>51</width>
+                 <height>21</height>
+                </rect>
+               </property>
+              </widget>
+              <widget class="QLabel" name="label_8">
+               <property name="geometry">
+                <rect>
+                 <x>10</x>
+                 <y>20</y>
+                 <width>60</width>
+                 <height>16</height>
+                </rect>
+               </property>
+               <property name="text">
+                <string>Units</string>
+               </property>
+              </widget>
+              <widget class="QCheckBox" name="scalebarcheck">
+               <property name="geometry">
+                <rect>
+                 <x>10</x>
+                 <y>50</y>
+                 <width>87</width>
+                 <height>20</height>
+                </rect>
+               </property>
+               <property name="layoutDirection">
+                <enum>Qt::RightToLeft</enum>
+               </property>
+               <property name="text">
+                <string>Scale Bar</string>
+               </property>
+               <property name="tristate">
+                <bool>false</bool>
+               </property>
+              </widget>
+             </widget>
              <zorder>groupBox_2</zorder>
              <zorder>vrmsbutton</zorder>
              <zorder>linearorderbutton</zorder>
              <zorder>orientationbutton</zorder>
              <zorder>alignmentbutton</zorder>
              <zorder>groupBox</zorder>
+             <zorder>groupBox_3</zorder>
             </widget>
            </widget>
           </item>

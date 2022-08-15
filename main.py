@@ -81,6 +81,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.showQuiver = False
         self.mpl_toolbar = NavigationToolbar2QT(self.mplwidget.canvas, None)
         cid = self.mplwidget.canvas.fig.canvas.mpl_connect('button_press_event', self.onclick)
+        mousemove = self.mplwidget.canvas.fig.canvas.mpl_connect('motion_notify_event', self.mousemove)
+        self.toolbarcoordlabel = QtWidgets.QLabel('coords')
+        self.toolBar.addWidget(self.toolbarcoordlabel)
         self.connectsignalsslots()
         self.stackslidermax = 0
         self.stackslider.setRange(0, self.stackslidermax)
@@ -209,13 +212,19 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def runPIV(self):
         overlap = 0.5
         self.progress = 0
-        self.piv.x = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
-        self.piv.y = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
-        self.piv.u = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
-        self.piv.v = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1), int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
+        self.piv.x = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1),
+                               int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
+        self.piv.y = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1),
+                               int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
+        self.piv.u = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1),
+                               int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
+        self.piv.v = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1),
+                               int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
         self.piv.nfields = self.imstack.nfiles-1
         self.piv.width = int(self.imstack.width // (self.windowsize*overlap)-1)
         self.piv.height = int(self.imstack.height // (self.windowsize*overlap)-1)
+        self.centerXinput.setText(str(self.piv.width/2))
+        self.centerYinput.setText(str(self.piv.height/2))
         # Create worker thread to perform multiprocessing
         self.starttime = time.time()
         self.threadpool = QtCore.QThreadPool()
@@ -555,9 +564,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         headers, data = self.tableview.getData()
         headerstr = ", ".join(headers)
         filename = QtWidgets.QFileDialog.getSaveFileName(self, 'Save File', directory='~/Documents')
-        np.savetxt(filename[0] + '.txt', np.array(data,dtype=float), delimiter=',', header=headerstr, comments='')
-
-
+        fmt = '%1.3f'
+        np.savetxt(filename[0] + '.txt', np.array(data, dtype=float),fmt=fmt, delimiter=',', header=headerstr, comments='')
 
     def keyPressEvent(self, event):
         # Left and right for moving through stack
@@ -570,8 +578,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     self.stackslider.setValue(self.stackslider.value()-1)
         event.accept()
 
-    def onclick(self,event):
+    def onclick(self, event):
         print(event)
+
+    def mousemove(self, event):
+        x, y = event.x, event.y
+        self.toolbarcoordlabel.setText(str(x)+" "+str(y))
 
 
 class TableView(QtWidgets.QTableWidget):
