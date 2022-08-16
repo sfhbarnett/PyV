@@ -5,6 +5,6 @@ This package is geared towards collective cell migration but can also be used in
 It's possible to export the fields as either csv or hdf5 files and export the rendered images for publication.
 
 Interface:
-![image](https://user-images.githubusercontent.com/45679976/184342965-eb81eb7b-d3a8-4ab6-b8f6-6ce00a6becd9.png)
+<img width="1435" alt="image" src="https://user-images.githubusercontent.com/45679976/184831031-df05b11b-5726-4ea1-8652-6b3678245c3c.png">
 
 [1] https://www.mn.uio.no/math/english/people/aca/jks/matpiv/
