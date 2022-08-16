@@ -57,9 +57,6 @@ class Worker(QtCore.QRunnable):
 def pivwrapper(image1, image2, windowsize, frame):
     overlap = 0.5
     x, y, u, v = PIV(image1, image2, windowsize, overlap)
-    u, v = localfilt(x, y, u, v, 2)
-    u = naninterp(u)
-    v = naninterp(v)
     return x, y, u, v, frame
 
 
@@ -72,7 +69,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.seticons()
         self.piv = Pivdata()
         self.mincontrast = 0
-        self.maxcontrast = 64000
+        self.maxcontrast = 2**16
         self.quiver = None
         self.imagehandle = plt.imshow(np.array([[]]))
         self.imageitem = None
@@ -80,6 +77,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.extent = [0, 1000, 0, 1000]
         self.imstack = None
         self.showQuiver = False
+        self.scalebar = None
         self.mpl_toolbar = NavigationToolbar2QT(self.mplwidget.canvas, None)
         cid = self.mplwidget.canvas.fig.canvas.mpl_connect('button_press_event', self.onclick)
         mousemove = self.mplwidget.canvas.fig.canvas.mpl_connect('motion_notify_event', self.mousemove)
@@ -150,6 +148,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.pixelsizeinput.editingFinished.connect(self.setPixelSize)
         self.maxspeedinput.editingFinished.connect(self.updatedisplayspeed)
         self.arrowscaleinput.editingFinished.connect(self.setarrowscale)
+        self.localfilterbutton.clicked.connect(self.filterfield)
         # Analysis
         self.alignmentbutton.clicked.connect(self.alignment)
         self.orientationbutton.clicked.connect(self.orientation)
@@ -172,6 +171,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.cleartablebutton.clicked.connect(self.cleartable)
         self.exporttablebutton.clicked.connect(self.exporttable)
         self.scalebarcheck.stateChanged.connect(self.addScalebar)
+        self.scalebarlengthinput.editingFinished.connect(self.updatescalebar)
+        self.scalebarunitsinput.editingFinished.connect(self.updatescalebar)
 
     def get_file(self):
         """"
@@ -212,8 +213,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.mplwidget.canvas.fig.canvas.draw()
 
     def runPIV(self):
+        self.runPIVbutton.setEnabled(False)
         overlap = 0.5
         self.progress = 0
+        self.updateprogress(0)
         self.piv.x = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1),
                                int(self.imstack.width // (self.windowsize*overlap)-1), self.imstack.nfiles-1))
         self.piv.y = np.zeros((int(self.imstack.width // (self.windowsize*overlap)-1),
@@ -247,10 +250,22 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.progress += 1
 
     def finishedpiv(self):
+        self.runPIVbutton.setEnabled(True)
+        self.makeQuiver()
         self.statusbar.showMessage(f"PIV run in:  {round(time.time()-self.starttime,2)} seconds", 4000)
 
     def updateprogress(self, value):
         self.progressbar.setValue((value / (self.imstack.nfiles-1))*100)
+
+    def filterfield(self):
+        threshold = float(self.filterthresholdinput.text())
+        for field in range(self.piv.nfields):
+            u, v = localfilt(self.piv.x[:,:,field], self.piv.y[:,:,field], self.piv.u[:,:,field], self.piv.v[:,:,field], threshold)
+            u = naninterp(u)
+            v = naninterp(v)
+            self.piv.u[:,:,field] = u
+            self.piv.v[:,:,field] = v
+        self.makeQuiver()
 
     def makeQuiver(self):
         if self.quiver is not None:
@@ -608,15 +623,23 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def addScalebar(self):
         if self.scalebarcheck.isChecked():
+            if self.scalebar is not None:
+                self.scalebar.remove()
+                self.scalebar = None
             unit = self.scalebarunitsinput.text()
             length = float(self.scalebarlengthinput.text())/self.pixelsize
             self.scalebar = AnchoredSizeBar(self.mplwidget.canvas.axes.transData, size=length,
                                             label=self.scalebarlengthinput.text()+" " + unit, loc="lower right",
-                                            color='white', frameon=False,size_vertical=10)
+                                            color='white', frameon=False, size_vertical=10)
             self.mplwidget.canvas.axes.add_artist(self.scalebar)
         if not self.scalebarcheck.isChecked():
             self.scalebar.remove()
+            self.scalebar = None
         self.mplwidget.canvas.fig.canvas.draw()
+
+    def updatescalebar(self):
+        self.setFocus()
+        self.addScalebar()
 
 
 class TableView(QtWidgets.QTableWidget):
