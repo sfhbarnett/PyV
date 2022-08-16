@@ -499,8 +499,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.contrastslider.setSingleStep(0.01)
             self.contrastslider.setDecimals(2)
             self.contrastslider.label_shift_x = 10
-            self.extent = [self.windowsize/4, self.imstack.width-self.windowsize/4,
-                           self.windowsize/4, self.imstack.width-self.windowsize/4]
+            if self.imstack is not None:
+                self.extent = [self.windowsize/4, self.imstack.width-self.windowsize/4,
+                               self.windowsize/4, self.imstack.width-self.windowsize/4]
+            else:
+                self.imagehandle = self.mplwidget.canvas.axes.imshow(alignmap)
+                self.extent = [self.windowsize/4, self.piv.width*self.windowsize/2+self.windowsize/4,
+                               self.windowsize/4, self.piv.width*self.windowsize/2+self.windowsize/4]
             self.imagehandle.set_extent(self.extent)
             self.imagehandle.set_cmap('viridis')
             self.imagehandle.set_clim(-1, 1)
@@ -520,8 +525,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                            order=0, preserve_range=True)
             self.imagehandle.set_data(np.flipud(theta.T)+180)
             self.imagehandle.set_clim(0, 360)
-            self.extent = [self.windowsize/4, self.imstack.width-self.windowsize/4,
-                           self.windowsize/4, self.imstack.width-self.windowsize/4]
+            if self.imstack is not None:
+                self.extent = [self.windowsize/4, self.imstack.width-self.windowsize/4,
+                               self.windowsize/4, self.imstack.width-self.windowsize/4]
+            else:
+                self.imagehandle = self.mplwidget.canvas.axes.imshow(np.flipud(theta.T)+180)
+                self.extent = [self.windowsize/4, self.piv.width*self.windowsize/2+self.windowsize/4,
+                               self.windowsize/4, self.piv.width*self.windowsize/2+self.windowsize/4]
             self.imagehandle.set_extent(self.extent)
             self.imagehandle.set_cmap('hsv')
             self.mplwidget.canvas.fig.canvas.draw()
@@ -535,7 +545,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.tableview.addData(self.vrms, 'Vrms')
 
     def rotationalorder(self):
-        pass
+        self.ROP = []
+        for frame in range(self.piv.u.shape[2]):
+            meanuv2 = np.mean(self.piv.ru[:, :, frame]**2)+np.mean(self.piv.rv[:, :, frame]**2)
+            meanu = np.mean(self.piv.ru[:, :, frame])**2
+            self.ROP.append(meanu/meanuv2)
+        self.tableview.addData(self.ROP, 'RotationOrder')
 
     def lineariseField(self):
         self.piv.lineariseField()
@@ -585,24 +600,23 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         event.accept()
 
     def onclick(self, event):
-        print(event)
+        pass
 
     def mousemove(self, event):
         x, y = event.x, event.y
         self.toolbarcoordlabel.setText(str(x)+" "+str(y))
 
     def addScalebar(self):
-        if self.scalebarcheck.isChecked() == True:
+        if self.scalebarcheck.isChecked():
             unit = self.scalebarunitsinput.text()
             length = float(self.scalebarlengthinput.text())/self.pixelsize
             self.scalebar = AnchoredSizeBar(self.mplwidget.canvas.axes.transData, size=length,
-                                            label=self.scalebarlengthinput.text()+" " +unit, loc="lower right",
+                                            label=self.scalebarlengthinput.text()+" " + unit, loc="lower right",
                                             color='white', frameon=False,size_vertical=10)
             self.mplwidget.canvas.axes.add_artist(self.scalebar)
-        if self.scalebarcheck.isChecked() == False:
+        if not self.scalebarcheck.isChecked():
             self.scalebar.remove()
         self.mplwidget.canvas.fig.canvas.draw()
-
 
 
 class TableView(QtWidgets.QTableWidget):
